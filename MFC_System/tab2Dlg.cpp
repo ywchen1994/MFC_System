@@ -101,7 +101,6 @@ void tab2Dlg::Thread_Image_CannyRoi(LPVOID lParam)
 
 		hWnd->ShowImage(CannyRoi_C1, hWnd->GetDlgItem(IDC_IMAGE_CannyRoi), 1,cvSize(480,360));
 		cvReleaseImage(&CannyRoi_C1);
-
 	}
 
 
