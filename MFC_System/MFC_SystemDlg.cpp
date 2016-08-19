@@ -15,7 +15,7 @@
 // CMFC_SystemDlg 對話方塊
 IplImage*CMFC_SystemDlg::img_depthS=nullptr;
 IplImage*CMFC_SystemDlg::img_rgbS = nullptr;
-
+IplImage*CMFC_SystemDlg::img_CannyS = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
 CMFC_SystemDlg::CMFC_SystemDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_MFC_SYSTEM_DIALOG, pParent)
 {
@@ -48,8 +48,27 @@ BOOL CMFC_SystemDlg::OnInitDialog()
 	// 框架會自動從事此作業
 	SetIcon(m_hIcon, TRUE);			// 設定大圖示
 	SetIcon(m_hIcon, FALSE);		// 設定小圖示
+	m_Tab.InsertItem(0, _T("設定"));/*給予標籤名稱*/
+	m_Tab.InsertItem(1, _T("視覺"));
+	m_Tab.InsertItem(2, _T("運送"));
+	/********************************************/
+	m_TabPage1.Create(IDD_DIALOG_tab1, &m_Tab);
+	m_TabPage2.Create(IDD_DIALOG_tab2, &m_Tab);
+	m_TabPage3.Create(IDD_DIALOG_tab3, &m_Tab);
 
-	// TODO: 在此加入額外的初始設定
+	//設定tab control 的第一頁在開始時能正確顯示
+	CRect rTab, rItem;
+	m_Tab.GetItemRect(0, &rItem);
+	m_Tab.GetClientRect(&rTab);
+	int x = rItem.left;
+	int y = rItem.bottom + 1;
+	int cx = rTab.right - rItem.left - 3;
+	int cy = rTab.bottom - y - 2;
+	m_TabPage3.SetWindowPos(NULL, x, y, cx, cy, SWP_HIDEWINDOW);
+	m_TabPage2.SetWindowPos(NULL, x, y, cx, cy, SWP_HIDEWINDOW);
+	m_TabPage1.SetWindowPos(NULL, x, y, cx, cy, SWP_SHOWWINDOW);
+	/*************************************/
+	
 	m_Img_RGBLive.SetWindowPos(NULL, 10, 10, 320, 240, SWP_SHOWWINDOW);
 	m_Img_DepthLive.SetWindowPos(NULL, 10 + 320, 10, 320, 240, SWP_SHOWWINDOW);
 	return TRUE;  // 傳回 TRUE，除非您對控制項設定焦點
@@ -94,6 +113,31 @@ HCURSOR CMFC_SystemDlg::OnQueryDragIcon()
 void CMFC_SystemDlg::OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	// TODO: 在此加入控制項告知處理常式程式碼
+	CRect rTab, rItem;
+	m_Tab.GetItemRect(0, &rItem);
+	m_Tab.GetClientRect(&rTab);
+	int x = rItem.left;
+	int y = rItem.bottom + 1;
+	int cx = rTab.right - rItem.left - 3;
+	int cy = rTab.bottom - y - 2;
+	int tab = m_Tab.GetCurSel();
+
+	m_TabPage1.SetWindowPos(NULL, x, y, cx, cy, SWP_HIDEWINDOW);
+	m_TabPage2.SetWindowPos(NULL, x, y, cx, cy, SWP_HIDEWINDOW);
+	m_TabPage3.SetWindowPos(NULL, x, y, cx, cy, SWP_HIDEWINDOW);
+
+	switch (tab)
+	{
+	case 0:
+		m_TabPage1.SetWindowPos(NULL, x, y, cx, cy, SWP_SHOWWINDOW);
+		break;
+	case 1:
+		m_TabPage2.SetWindowPos(NULL, x, y, cx, cy, SWP_SHOWWINDOW);
+		break;
+	case 2:
+		m_TabPage3.SetWindowPos(NULL, x, y, cx, cy, SWP_SHOWWINDOW);
+		break;
+	}
 	*pResult = 0;
 }
 
@@ -187,7 +231,6 @@ void CMFC_SystemDlg::Thread_Image_Depth(LPVOID lParam)
 	CMythreadParam * Thread_Info = (CMythreadParam *)lParam;
 	CMFC_SystemDlg * hWnd = (CMFC_SystemDlg *)CWnd::FromHandle((HWND)Thread_Info->hWnd);
 	Kinect2Capture kinect;
-	
 
 	kinect.Open(1, 1, 1);
 	while (1)
@@ -195,9 +238,14 @@ void CMFC_SystemDlg::Thread_Image_Depth(LPVOID lParam)
 		img_depthS = kinect.DepthImage();
 		if (img_depthS != NULL)
 		{
+
+			cvCanny(img_depthS, img_CannyS,12,15);
+			cvCopy(img_CannyS, m_TabPage1.CannyRoi);
 			hWnd->ShowImage(img_depthS, hWnd->GetDlgItem(IDC_IMAGE_DepthLive), 1);
+			cvReleaseImage(&img_depthS);
 		}
-		cvReleaseImage(&img_depthS);
 	}
+	
+	
 
 }

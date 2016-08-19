@@ -5,8 +5,16 @@
 #pragma once
 #include "afxwin.h"
 #include "afxcmn.h"
+
 #include"..//Kinect2Capture//Kinect2Capture.h"
+
+#include "tab1Dlg.h"
+#include "tab2Dlg.h"
+#include "tab3Dlg.h"
+
 #include "CvvImage.h"
+#include"cv.h"
+#include"highgui.h"
 struct CMythreadParam
 {
 public:
@@ -48,14 +56,19 @@ public:
 	void Thread_Image_RGB(LPVOID lParam);
 	CMythreadParam m_threadPara;
 	CWinThread*  m_lpThread;
-	/*********************************/
+	/***************static******************/
 	static IplImage* img_rgbS;
 	static IplImage* img_depthS;
-
+	static IplImage* img_CannyS;
 	/**********************************/
 	CStatic m_Img_RGBLive;
 	CStatic m_Img_DepthLive;
+	/************************Tab***********************************/
 	CTabCtrl m_Tab;
+	tab1Dlg m_TabPage1;
+	tab2Dlg m_TabPage2;
+	tab3Dlg m_TabPage3;
 	afx_msg void OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult);
+	/**************************************************************/
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 };
