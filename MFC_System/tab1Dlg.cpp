@@ -34,8 +34,9 @@ void tab1Dlg::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(tab1Dlg, CDialogEx)
 	ON_WM_MOUSEMOVE()
-	ON_WM_LBUTTONDOWN()
+//	ON_WM_LBUTTONDOWN()
 	ON_WM_RBUTTONDOWN()
+	ON_WM_LBUTTONUP()
 END_MESSAGE_MAP()
 
 BOOL tab1Dlg::OnInitDialog()
@@ -55,31 +56,17 @@ void tab1Dlg::OnMouseMove(UINT nFlags, CPoint point)
 		m_XPos = point.x-10;
 		m_YPos = point.y-10;
 		UpdateData(false);
+		if (nFlags == MK_LBUTTON)
+		{
+			RoiPoint[0] = cvPoint(m_XPos, m_YPos);
+		}
 		CDialogEx::OnMouseMove(nFlags, point);
 	}
+	
 }
 
 
-void tab1Dlg::OnLButtonDown(UINT nFlags, CPoint point)
-{
 
-	
-	if (point.x > (10) && point.x < (10 + 512) && point.y > 10 && point.y < (10 + 424))
-	{
-		m_XPos = point.x - 10;
-		m_YPos = point.y - 10;
-		RoiPoint[PointNum] = cvPoint(m_XPos, m_YPos);
-	
-		PointNum++;
-
-			
-		
-		}
-	}
-	
-	CDialogEx::OnLButtonDown(nFlags, point);
-
-}
 void tab1Dlg::ShowImage(IplImage * Image, CWnd * pWnd, int channels)
 {
 	CDC	*dc = pWnd->GetWindowDC();
@@ -139,7 +126,7 @@ void tab1Dlg::SetRoI(IplImage* img_edge)
 
 	for (int j = 0; j< img_edge->height; j++) {
 		for (size_t i = 0; i < img_edge->width; i++) {
-			if (i< || i>Rx || j<Ty || j>By) {
+			if (i< RoiPoint [0].x || i>RoiPoint[1].x || j<RoiPoint[0].y || j>RoiPoint[1].y) {
 				cvSet2D(img_roiC3, j, i, CV_RGB(0, 0, 0));
 			}
 		}
@@ -157,4 +144,16 @@ void tab1Dlg::OnRButtonDown(UINT nFlags, CPoint point)
 	m_threadPara.hWnd = m_hWnd;
 	m_lpThread = AfxBeginThread(&tab1Dlg::MythreadFun, (LPVOID)&m_threadPara);
 	CDialogEx::OnRButtonDown(nFlags, point);
+}
+
+
+void tab1Dlg::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	if (point.x > (10) && point.x < (10 + 512) && point.y > 10 && point.y < (10 + 424))
+	{
+		RoiPoint[1] = cvPoint(point.x-10, point.y- 10);
+	}
+	
+	CDialogEx::OnLButtonUp(nFlags, point);
 }

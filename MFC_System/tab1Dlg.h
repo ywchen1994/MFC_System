@@ -30,14 +30,14 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+
 	void ShowImage(IplImage * Image, CWnd * pWnd, int channels);
 	int m_XPos;
 	int m_YPos;
 	CStatic m_Img_Canny;
 	static IplImage *CannyRoi;
 	int PointNum=0;
-	CvPoint RoiPoint[4];
+	CvPoint RoiPoint[2];
 	/******************************/
 	CTab1threadParam m_threadPara;
 	CWinThread*  m_lpThread;
@@ -47,4 +47,5 @@ public:
 	void SetRoI(IplImage * img_edge);
 	IplImage* CannyRoiC3;
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 };
