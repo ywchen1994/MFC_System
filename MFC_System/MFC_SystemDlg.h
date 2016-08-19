@@ -1,7 +1,6 @@
 
 // MFC_SystemDlg.h : º–¿Y¿…
 //
-
 #pragma once
 #include "afxwin.h"
 #include "afxcmn.h"
@@ -63,7 +62,7 @@ public:
 	/**********************************/
 	CStatic m_Img_RGBLive;
 	CStatic m_Img_DepthLive;
-	/************************Tab***********************************/
+	/************************Tab*********************************/
 	CTabCtrl m_Tab;
 	tab1Dlg m_TabPage1;
 	tab2Dlg m_TabPage2;
