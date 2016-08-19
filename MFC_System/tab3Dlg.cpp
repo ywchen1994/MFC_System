@@ -8,6 +8,8 @@
 
 
 // tab3Dlg ¹ï¸Ü¤è¶ô
+class CMFC_SystemApp;
+
 
 IMPLEMENT_DYNAMIC(tab3Dlg, CDialogEx)
 

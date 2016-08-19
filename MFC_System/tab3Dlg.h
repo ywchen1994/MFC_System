@@ -1,8 +1,8 @@
 #pragma once
-
+//#include"MFC_SystemDlg.h"
 
 // tab3Dlg ¹ï¸Ü¤è¶ô
-
+//class CMFC_SystemDlg;
 class tab3Dlg : public CDialogEx
 {
 	DECLARE_DYNAMIC(tab3Dlg)

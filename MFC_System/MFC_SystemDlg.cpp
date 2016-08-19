@@ -13,9 +13,10 @@
 
 
 // CMFC_SystemDlg 對話方塊
-IplImage*CMFC_SystemDlg::img_depthS=nullptr;
-IplImage*CMFC_SystemDlg::img_rgbS = nullptr;
+IplImage*CMFC_SystemDlg::img_DepthS=nullptr;
+IplImage*CMFC_SystemDlg::img_RgbS = nullptr;
 IplImage*CMFC_SystemDlg::img_CannyS = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
+IplImage*CMFC_SystemDlg::img_CannyRoiS = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
 CMFC_SystemDlg::CMFC_SystemDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_MFC_SYSTEM_DIALOG, pParent)
 {
@@ -31,8 +32,6 @@ void CMFC_SystemDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CMFC_SystemDlg, CDialogEx)
-	ON_WM_PAINT()
-	ON_WM_QUERYDRAGICON()
 	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB, &CMFC_SystemDlg::OnTcnSelchangeTab)
 	ON_WM_LBUTTONDOWN()
 END_MESSAGE_MAP()
@@ -76,39 +75,30 @@ BOOL CMFC_SystemDlg::OnInitDialog()
 
 
 
-void CMFC_SystemDlg::OnPaint()
+
+void CMFC_SystemDlg::ShowImage(IplImage * Image, CWnd * pWnd, int channels)
 {
-	if (IsIconic())
-	{
-		CPaintDC dc(this); // 繪製的裝置內容
-
-		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
-
-		// 將圖示置中於用戶端矩形
-		int cxIcon = GetSystemMetrics(SM_CXICON);
-		int cyIcon = GetSystemMetrics(SM_CYICON);
-		CRect rect;
-		GetClientRect(&rect);
-		int x = (rect.Width() - cxIcon + 1) / 2;
-		int y = (rect.Height() - cyIcon + 1) / 2;
-
-		// 描繪圖示
-		dc.DrawIcon(x, y, m_hIcon);
+	CDC	*dc = pWnd->GetWindowDC();
+	IplImage *Temp = NULL;
+	if (channels != 4) {
+		Temp = cvCreateImage(cvSize(320, 240), IPL_DEPTH_8U, channels);
+		cvResize(Image, Temp, CV_INTER_LINEAR);
 	}
-	else
+	if (channels == 4)
 	{
-		CDialogEx::OnPaint();
+		Temp = cvCreateImage(cvSize(320, 240), IPL_DEPTH_8U, 3);
+		IplImage *Temp_transfer = cvCreateImage(cvSize(320, 240), IPL_DEPTH_8U, 4);
+		cvResize(Image, Temp_transfer, CV_INTER_LINEAR);
+		cvCvtColor(Temp_transfer, Temp, CV_BGRA2BGR);
+		cvReleaseImage(&Temp_transfer);
 	}
+
+	CvvImage Temp2;
+	Temp2.CopyOf(Temp);
+	Temp2.Show(*dc, 0, 0, Temp->width, Temp->height);
+	cvReleaseImage(&Temp);
+	ReleaseDC(dc);
 }
-
-// 當使用者拖曳最小化視窗時，
-// 系統呼叫這個功能取得游標顯示。
-HCURSOR CMFC_SystemDlg::OnQueryDragIcon()
-{
-	return static_cast<HCURSOR>(m_hIcon);
-}
-
-
 
 void CMFC_SystemDlg::OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult)
 {
@@ -140,7 +130,6 @@ void CMFC_SystemDlg::OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult)
 	}
 	*pResult = 0;
 }
-
 
 void CMFC_SystemDlg::OnLButtonDown(UINT nFlags, CPoint point)
 {
@@ -184,29 +173,6 @@ UINT CMFC_SystemDlg::MythreadFun(LPVOID LParam)
 	return 0;
 
 }
-void CMFC_SystemDlg::ShowImage(IplImage * Image, CWnd * pWnd, int channels)
-{
-	CDC	*dc = pWnd->GetWindowDC();
-	IplImage *Temp = NULL;
-	if (channels != 4) {
-		Temp = cvCreateImage(cvSize(320, 240), IPL_DEPTH_8U, channels);
-		cvResize(Image, Temp, CV_INTER_LINEAR);
-	}
-	if (channels == 4)
-	{
-		Temp = cvCreateImage(cvSize(320, 240), IPL_DEPTH_8U, 3);
-		IplImage *Temp_transfer = cvCreateImage(cvSize(320, 240), IPL_DEPTH_8U, 4);
-		cvResize(Image, Temp_transfer, CV_INTER_LINEAR);
-		cvCvtColor(Temp_transfer, Temp, CV_BGRA2BGR);
-		cvReleaseImage(&Temp_transfer);
-	}
-
-	CvvImage Temp2;
-	Temp2.CopyOf(Temp);
-	Temp2.Show(*dc, 0, 0, Temp->width, Temp->height);
-	cvReleaseImage(&Temp);
-	ReleaseDC(dc);
-}
 void CMFC_SystemDlg::Thread_Image_RGB(LPVOID lParam)
 {
 	CMythreadParam * Thread_Info = (CMythreadParam *)lParam;
@@ -218,10 +184,10 @@ void CMFC_SystemDlg::Thread_Image_RGB(LPVOID lParam)
 	while (1)
 	{
 
-		img_rgbS = kinect.RGBAImage();
-		if (img_rgbS != NULL) {
-			hWnd->ShowImage(img_rgbS, hWnd->GetDlgItem(IDC_IMAGE_RGBLive), 4);	
-			cvReleaseImage(&img_rgbS);
+		img_RgbS = kinect.RGBAImage();
+		if (img_RgbS != NULL) {
+			hWnd->ShowImage(img_RgbS, hWnd->GetDlgItem(IDC_IMAGE_RGBLive), 4);	
+			cvReleaseImage(&img_RgbS);
 		}
 	}
 
@@ -235,14 +201,12 @@ void CMFC_SystemDlg::Thread_Image_Depth(LPVOID lParam)
 	kinect.Open(1, 1, 1);
 	while (1)
 	{
-		img_depthS = kinect.DepthImage();
-		if (img_depthS != NULL)
+		img_DepthS = kinect.DepthImage();
+		if (img_DepthS != NULL)
 		{
-
-			cvCanny(img_depthS, img_CannyS,12,15);
-			cvCopy(img_CannyS, m_TabPage1.CannyRoi);
-			hWnd->ShowImage(img_depthS, hWnd->GetDlgItem(IDC_IMAGE_DepthLive), 1);
-			cvReleaseImage(&img_depthS);
+			cvCanny(img_DepthS, img_CannyS,12,15);
+			hWnd->ShowImage(img_DepthS, hWnd->GetDlgItem(IDC_IMAGE_DepthLive), 1);
+			cvReleaseImage(&img_DepthS);
 		}
 	}
 	
