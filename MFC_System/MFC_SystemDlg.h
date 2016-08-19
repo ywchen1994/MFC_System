@@ -75,5 +75,4 @@ public:
 	/**************************************************************/
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 
-	//new origin
 };
