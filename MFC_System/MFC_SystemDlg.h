@@ -2,17 +2,13 @@
 // MFC_SystemDlg.h : º–¿Y¿…
 //
 
-//this is new(2
 #pragma once
 #include "afxwin.h"
 #include "afxcmn.h"
-
 #include"..//Kinect2Capture//Kinect2Capture.h"
-
 #include "tab1Dlg.h"
 #include "tab2Dlg.h"
 #include "tab3Dlg.h"
-
 #include "CvvImage.h"
 #include"cv.h"
 #include"highgui.h"
