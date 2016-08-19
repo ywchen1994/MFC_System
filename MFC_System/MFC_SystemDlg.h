@@ -74,4 +74,6 @@ public:
 	afx_msg void OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult);
 	/**************************************************************/
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+
+	//new origin
 };
