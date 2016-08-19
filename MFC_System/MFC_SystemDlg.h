@@ -2,8 +2,7 @@
 // MFC_SystemDlg.h : º–¿Y¿…
 //
 
-//this is new1
-
+//this is new(2
 #pragma once
 #include "afxwin.h"
 #include "afxcmn.h"
