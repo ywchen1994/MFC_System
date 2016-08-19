@@ -4,6 +4,7 @@
 #include "afxwin.h"
 
 
+
 struct CTab2threadParam
 {
 public:
@@ -46,4 +47,5 @@ public:
 
 	CStatic m_img_CannyRoi;
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	CStatic m_img_approxPoly;
 };

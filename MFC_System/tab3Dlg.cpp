@@ -6,9 +6,10 @@
 #include "tab3Dlg.h"
 #include "afxdialogex.h"
 
+#include"MFC_SystemDlg.h"
+class CMFC_SystemDlg;
 
 // tab3Dlg ¹ï¸Ü¤è¶ô
-class CMFC_SystemApp;
 
 
 IMPLEMENT_DYNAMIC(tab3Dlg, CDialogEx)

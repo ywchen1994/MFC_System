@@ -11,6 +11,7 @@
 #include "CvvImage.h"
 #include"cv.h"
 #include"highgui.h"
+
 struct CMythreadParam
 {
 public:
@@ -59,6 +60,7 @@ public:
 	static IplImage* img_DepthS;
 	static IplImage* img_CannyS;
 	static IplImage* img_CannyRoiS;
+	static CvPoint RoiPoint[2];
 	/**********************************/
 	CStatic m_Img_RGBLive;
 	CStatic m_Img_DepthLive;

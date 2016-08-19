@@ -34,13 +34,12 @@ protected:
 	virtual BOOL OnInitDialog();
 	DECLARE_MESSAGE_MAP()
 public:
-	
 	void ShowImage(IplImage * Image, CWnd * pWnd, int channels);
 	int m_XPos;
 	int m_YPos;
 	CStatic m_Img_Canny;
 	int PointNum=0;
-	static CvPoint RoiPoint[2];
+	
 	/******************************/
 	CTab1threadParam m_threadPara;
 	CWinThread*  m_lpThread;

@@ -11,6 +11,7 @@
 #define new DEBUG_NEW
 #endif
 
+CvPoint CMFC_SystemDlg::RoiPoint[2] = { cvPoint(0,0),cvPoint(512,424) };
 
 // CMFC_SystemDlg ¹ï¸Ü¤è¶ô
 IplImage*CMFC_SystemDlg::img_DepthS=nullptr;

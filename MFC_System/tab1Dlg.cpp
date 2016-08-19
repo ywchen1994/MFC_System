@@ -5,12 +5,13 @@
 #include "MFC_System.h"
 #include "tab1Dlg.h"
 #include "afxdialogex.h"
+
 #include"MFC_SystemDlg.h"
 class CMFC_SystemDlg;
 
 // tab1Dlg ¹ï¸Ü¤è¶ô
 
-CvPoint tab1Dlg::RoiPoint[2] = {cvPoint(0,0),cvPoint(512,424)};
+
 
 IMPLEMENT_DYNAMIC(tab1Dlg, CDialogEx)
 
@@ -93,9 +94,9 @@ void tab1Dlg::Thread_Image_Canny(LPVOID lParam)
 {
 	CTab1threadParam * Thread_Info = (CTab1threadParam *)lParam;
 	tab1Dlg * hWnd = (tab1Dlg *)CWnd::FromHandle((HWND)Thread_Info->hWnd);
-	CMFC_SystemDlg mainDlg;
 	IplImage* img_Canny_C3;
 	IplImage* img_CannyRoi_C1;
+	CMFC_SystemDlg mainDlg;
 	while (1)
 	{
 		img_Canny_C3 = cvCreateImage(cvSize(512,424), IPL_DEPTH_8U, 3);
@@ -106,7 +107,7 @@ void tab1Dlg::Thread_Image_Canny(LPVOID lParam)
 		hWnd->SetRoI(img_CannyRoi_C1);
 		cvCopy(img_CannyRoi_C1, mainDlg.img_CannyRoiS);
 
-		cvRectangle(img_Canny_C3, RoiPoint[0], RoiPoint[1],CV_RGB(255,0,0));
+		cvRectangle(img_Canny_C3, mainDlg.RoiPoint[0], mainDlg.RoiPoint[1],CV_RGB(255,0,0));
 
 		hWnd->ShowImage(img_Canny_C3, hWnd->GetDlgItem(IDC_IMAGE_Canny), 3);
 		cvReleaseImage(&img_Canny_C3);
@@ -117,14 +118,14 @@ void tab1Dlg::Thread_Image_Canny(LPVOID lParam)
 
 void tab1Dlg::SetRoI(IplImage* img_edge)
 {
-	
+	CMFC_SystemDlg mainDlg;
 	IplImage* img_roi_C3 = cvCreateImage(cvGetSize(img_edge), IPL_DEPTH_8U, 3);
 	cvCvtColor(img_edge, img_roi_C3, CV_GRAY2BGR);
-
+	//CMFC_SystemDlg mainDlg;
 
 	for (int j = 0; j< img_edge->height; j++) {
 		for (size_t i = 0; i < img_edge->width; i++) {
-			if (i< RoiPoint[0].x || i>RoiPoint[1].x || j<RoiPoint[0].y || j>RoiPoint[1].y) {
+			if (i< mainDlg.RoiPoint[0].x || i>mainDlg.RoiPoint[1].x || j<mainDlg.RoiPoint[0].y || j>mainDlg.RoiPoint[1].y) {
 				cvSet2D(img_roi_C3, j, i, CV_RGB(0, 0, 0));
 			}
 		}
@@ -149,7 +150,8 @@ void tab1Dlg::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	if (point.x > (10) && point.x < (10 + 512) && point.y > 10 && point.y < (10 + 424))
 	{
-		RoiPoint[0] = cvPoint(point.x-10, point.y-10);
+		CMFC_SystemDlg mainDlg;
+		mainDlg.RoiPoint[0] = cvPoint(point.x-10, point.y-10);
 	}
 }
 
@@ -162,7 +164,8 @@ void tab1Dlg::OnMouseMove(UINT nFlags, CPoint point)
 		UpdateData(false);
 		if (nFlags == MK_LBUTTON)
 		{
-			RoiPoint[1] = cvPoint(point.x - 10, point.y - 10);
+			CMFC_SystemDlg mainDlg;
+			mainDlg.RoiPoint[1] = cvPoint(point.x - 10, point.y - 10);
 		}
 		CDialogEx::OnMouseMove(nFlags, point);
 	}

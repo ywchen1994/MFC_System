@@ -5,6 +5,7 @@
 #include "MFC_System.h"
 #include "tab2Dlg.h"
 #include "afxdialogex.h"
+
 #include"MFC_SystemDlg.h"
 class CMFC_SystemDlg;
 
@@ -26,6 +27,7 @@ void tab2Dlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_IMAGE_CannyRoi, m_img_CannyRoi);
+	DDX_Control(pDX, IDC_IMAGE_ApproxPoly, m_img_approxPoly);
 }
 
 
@@ -40,7 +42,7 @@ BOOL tab2Dlg::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	m_img_CannyRoi.SetWindowPos(NULL, 10, 10, 480, 360, SWP_SHOWWINDOW);
-
+	m_img_approxPoly.SetWindowPos(NULL, 10, 380, 480, 360, SWP_SHOWWINDOW);
 	return TRUE;
 }
 
@@ -98,12 +100,11 @@ void tab2Dlg::Thread_Image_CannyRoi(LPVOID lParam)
 		CannyRoi_C1 = cvCreateImage(cvGetSize(mainDlg.img_CannyRoiS), IPL_DEPTH_8U, 1);
 
 		cvCopy(mainDlg.img_CannyRoiS, CannyRoi_C1);
-
+		CvRect rect = { mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[0].y,320,240 };
+		cvSetImageROI(CannyRoi_C1, rect);
 		hWnd->ShowImage(CannyRoi_C1, hWnd->GetDlgItem(IDC_IMAGE_CannyRoi), 1,cvSize(480,360));
 		cvReleaseImage(&CannyRoi_C1);
 	}
-
-
 }
 
 
