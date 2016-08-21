@@ -119,6 +119,7 @@ void tab2Dlg::OnLButtonDown(UINT nFlags, CPoint point)
 	}
 	if (point.x > (10) && point.x < (10 + 320) && point.y > 10+240 && point.y < (10 + 240+240))
 	{
+		ObjectCounter = 0;
 		system("del .\\ApproxPolyPics\\*.jpg");
 		CMFC_SystemDlg mainDlg;
 		IplImage*  img_CannyRoi = cvCreateImage(cvGetSize(mainDlg.img_CannyRoiS), IPL_DEPTH_8U, 1);
@@ -242,7 +243,8 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 {
 	// TODO: 在此加入控制項告知處理常式程式碼
 	int select = m_combo_objList.GetCurSel();
-	char Pos[10] = { 0 };
+	CString Pos;
+
 	char path[100];
 	sprintf(path, "ApproxPolyPics/inside%d.jpg", select);
 	IplImage* ImageLoad= cvLoadImage(path, 0);
@@ -256,12 +258,23 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 	if (CornerCounter==4) {
 		cvCvtColor(ImgApproxPolyLoad,imageCorner,CV_GRAY2RGB);
 		for (int i = 0; i < 4;i++){
-			sprintf(Pos, "(%d,%d)", CornerPoint[i].x, CornerPoint[i].y);
-			Text(imageCorner, Pos, CornerPoint[i].x, CornerPoint[i].y);
+			cvCircle(imageCorner, CornerPoint[i], 3, CV_RGB(0, 255, 255), CV_FILLED);
 		}
-		sprintf(Pos, "(%d,%d)", Center.x, Center.y);
-		Text(imageCorner, Pos, Center.x, Center.y);
+		Pos.Format(_T("%d,%d"), CornerPoint[0].x, CornerPoint[0].y);
+		GetDlgItem(IDC_EDIT1_pixel_corner1)->SetWindowTextW(Pos);
+
+		Pos.Format(_T("%d,%d"), CornerPoint[1].x, CornerPoint[1].y);
+		GetDlgItem(IDC_EDIT1_pixel_corner2)->SetWindowTextW(Pos);
+
+		Pos.Format(_T("%d,%d"), CornerPoint[2].x, CornerPoint[2].y);
+		GetDlgItem(IDC_EDIT1_pixel_corner3)->SetWindowTextW(Pos);
 		
+		Pos.Format(_T("%d,%d"), CornerPoint[3].x, CornerPoint[3].y);
+		GetDlgItem(IDC_EDIT1_pixel_corner4)->SetWindowTextW(Pos);
+
+		Pos.Format(_T("%d,%d"), Center.x, Center.y);
+		GetDlgItem(IDC_EDIT1_pixel_cornerCenter)->SetWindowTextW(Pos);
+
 		ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly),3, cvSize(640, 480));
 	}
 	else
