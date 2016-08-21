@@ -48,4 +48,20 @@ public:
 	CStatic m_img_CannyRoi;
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	CStatic m_img_approxPoly;
+
+	void ImageProcessing(IplImage * img_roi);
+	void ApproxPoly(IplImage * img_roi);
+	void findinside(IplImage * Img);
+	CComboBox m_combo_objList;
+	afx_msg void OnCbnSelchangeComboobjlist();
+	int ObjectCounter=0;
+
+	void CornerDetection(IplImage * edge_roi, IplImage * CornerImg_Modified,int radius);
+	void CornerFind(IplImage * Cornerimage, IplImage * dst, int radius);
+	CvPoint GetCornerPoint(IplImage * src, IplImage * dst, int radius);
+	CvPoint GetCenterPoint(IplImage * src);
+	int CornerCounter = 0;
+	CvPoint	CornerPoint[10];
+
+
 };
