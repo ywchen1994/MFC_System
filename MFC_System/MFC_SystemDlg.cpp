@@ -7,6 +7,7 @@
 #include "MFC_SystemDlg.h"
 #include "afxdialogex.h"
 
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -14,12 +15,27 @@
 CvPoint CMFC_SystemDlg::RoiPoint[2] = { cvPoint(0,0),cvPoint(512,424) };
 
 // CMFC_SystemDlg 對話方塊
+Kinect2Capture CMFC_SystemDlg::kinect;
 IplImage*CMFC_SystemDlg::img_DepthS=nullptr;
+float CMFC_SystemDlg::DepthPointsBase[512][424]= { 0 };
 IplImage*CMFC_SystemDlg::img_RgbS = nullptr;
 IplImage*CMFC_SystemDlg::img_CannyS = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
 IplImage*CMFC_SystemDlg::img_CannyRoiS = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
+float CMFC_SystemDlg::CamRefX = 0;
+float CMFC_SystemDlg::CamRefY = 0;
+float CMFC_SystemDlg::CamRefZ = 0;
+CvPoint CMFC_SystemDlg::Center = cvPoint(0, 0);
+float CMFC_SystemDlg::s_Xpos = 0;
+float CMFC_SystemDlg::s_Ypos = 0;
+float CMFC_SystemDlg::s_Zpos = 0;
+float CMFC_SystemDlg::s_Tdeg = 0;
+
 CMFC_SystemDlg::CMFC_SystemDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_MFC_SYSTEM_DIALOG, pParent)
+	, m_Xpos(0)
+	, m_Ypos(0)
+	, m_Zpos(0)
+	, m_Tdeg(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -30,11 +46,19 @@ void CMFC_SystemDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_IMAGE_RGBLive, m_Img_RGBLive);
 	DDX_Control(pDX, IDC_TAB, m_Tab);
 	DDX_Control(pDX, IDC_IMAGE_DepthLive, m_Img_DepthLive);
+	DDX_Text(pDX, IDC_EDIT_SCARACommandX, m_Xpos);
+	DDX_Text(pDX, IDC_EDIT_SCARACommandY, m_Ypos);
+	DDX_Text(pDX, IDC_EDIT_SCARACommandZ, m_Zpos);
+	DDX_Text(pDX, IDC_EDIT_SCARACommandT, m_Tdeg);
+	DDX_Control(pDX, IDC_IPControl_SCARAIP, m_SCARAIP);
+	DDX_Control(pDX, IDC_CHECK_ImgLockerMDLG, m_ImgLockerMDLG);
 }
 
 BEGIN_MESSAGE_MAP(CMFC_SystemDlg, CDialogEx)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB, &CMFC_SystemDlg::OnTcnSelchangeTab)
 	ON_WM_LBUTTONDOWN()
+	ON_WM_RBUTTONDOWN()
+	ON_BN_CLICKED(IDC_BUTTON_update, &CMFC_SystemDlg::OnBnClickedButtonupdate)
 END_MESSAGE_MAP()
 
 
@@ -71,11 +95,9 @@ BOOL CMFC_SystemDlg::OnInitDialog()
 	
 	m_Img_RGBLive.SetWindowPos(NULL, 10, 10, 320, 240, SWP_SHOWWINDOW);
 	m_Img_DepthLive.SetWindowPos(NULL, 10 + 320, 10, 320, 240, SWP_SHOWWINDOW);
+	m_SCARAIP.SetWindowText(_T("192.168.1.3"));
 	return TRUE;  // 傳回 TRUE，除非您對控制項設定焦點
 }
-
-
-
 
 void CMFC_SystemDlg::ShowImage(IplImage * Image, CWnd * pWnd, int channels)
 {
@@ -134,22 +156,23 @@ void CMFC_SystemDlg::OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult)
 
 void CMFC_SystemDlg::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
-	if (point.x >10 && point.x < (10 + 320) && point.y > 10 && point.y < (10 + 240))
-	{
-		m_threadPara.m_case = 0;
-		m_threadPara.hWnd = m_hWnd;
-		m_lpThread = AfxBeginThread(&CMFC_SystemDlg::MythreadFun, (LPVOID)&m_threadPara);
+	if (!m_ImgLockerMDLG.GetCheck()) {
+		if (point.x > 10 && point.x < (10 + 320) && point.y > 10 && point.y < (10 + 240))
+		{
+			m_threadPara.m_case = 0;
+			m_threadPara.hWnd = m_hWnd;
+			m_lpThread = AfxBeginThread(&CMFC_SystemDlg::MythreadFun, (LPVOID)&m_threadPara);
+		}
+		if (point.x > 10 + 320 && point.x < (10 + 320 + 320) && point.y > 10 && point.y < (10 + 240))
+		{
+			m_threadPara.m_case = 1;
+			m_threadPara.hWnd = m_hWnd;
+			m_lpThread = AfxBeginThread(&CMFC_SystemDlg::MythreadFun, (LPVOID)&m_threadPara);
+		}
 	}
-	if (point.x > 10+320 && point.x < (10 + 320+320) && point.y > 10 && point.y < (10 + 240))
-	{
-		m_threadPara.m_case = 1;
-		m_threadPara.hWnd = m_hWnd;
-		m_lpThread = AfxBeginThread(&CMFC_SystemDlg::MythreadFun, (LPVOID)&m_threadPara);
-	}
-
 	CDialogEx::OnLButtonDown(nFlags, point);
 }
+
 UINT CMFC_SystemDlg::MythreadFun(LPVOID LParam)
 {
 	CMythreadParam* para = (CMythreadParam*)LParam;
@@ -174,6 +197,7 @@ UINT CMFC_SystemDlg::MythreadFun(LPVOID LParam)
 	return 0;
 
 }
+
 void CMFC_SystemDlg::Thread_Image_RGB(LPVOID lParam)
 {
 	CMythreadParam * Thread_Info = (CMythreadParam *)lParam;
@@ -181,10 +205,9 @@ void CMFC_SystemDlg::Thread_Image_RGB(LPVOID lParam)
 	Kinect2Capture kinect;
 
 	kinect.Open(1, 0, 0);
-
+	
 	while (1)
 	{
-
 		img_RgbS = kinect.RGBAImage();
 		if (img_RgbS != NULL) {
 			hWnd->ShowImage(img_RgbS, hWnd->GetDlgItem(IDC_IMAGE_RGBLive), 4);	
@@ -193,24 +216,113 @@ void CMFC_SystemDlg::Thread_Image_RGB(LPVOID lParam)
 	}
 
 }
+
 void CMFC_SystemDlg::Thread_Image_Depth(LPVOID lParam)
 {
 	CMythreadParam * Thread_Info = (CMythreadParam *)lParam;
 	CMFC_SystemDlg * hWnd = (CMFC_SystemDlg *)CWnd::FromHandle((HWND)Thread_Info->hWnd);
-	Kinect2Capture kinect;
-
 	kinect.Open(1, 1, 1);
+	
+
+	
 	while (1)
 	{
 		img_DepthS = kinect.DepthImage();
 		if (img_DepthS != NULL)
 		{
-			cvCanny(img_DepthS, img_CannyS,12,15);
 			hWnd->ShowImage(img_DepthS, hWnd->GetDlgItem(IDC_IMAGE_DepthLive), 1);
+			cvCanny(img_DepthS, img_CannyS,8,15);//@canny value
+
 			cvReleaseImage(&img_DepthS);
 		}
 	}
-	
-	
+}
 
+void CMFC_SystemDlg::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	if (!m_ImgLockerMDLG.GetCheck()) {
+		if (point.x > 10 + 320 && point.x < (10 + 320 + 320) && point.y > 10 && point.y < (10 + 240))
+		{
+			for (int i = 0; i < 512; i++)
+				for (int j = 0; j < 424; j++)
+					DepthPointsBase[i][j] = kinect.pDepthPoints[i + 512 * j];//單位是mm
+		}
+	}
+	CDialogEx::OnRButtonDown(nFlags, point);
+}
+
+void CMFC_SystemDlg::SetPos(float x)
+{
+	m_Xpos = x;
+}
+
+void CMFC_SystemDlg::OnBnClickedButtonupdate()
+{
+	UpdateData(false);
+	
+	//夾爪夾取 寫這裡
+
+	float tarX = 280;
+	float tarY = 410;
+	float tarZ = 50;
+	float tarTheta = 0;
+	AfxSocketInit();
+	CSocket client_socket;
+	CString csIP;
+	m_SCARAIP.GetWindowTextW(csIP);
+
+	char resp[256];
+
+	if (!client_socket.Create())
+	{
+		MessageBox(_T("Create Faild"));
+		return;
+	}
+	if (client_socket.Connect(csIP, 8888))
+	{
+		packetCreat_toPoint(tarX, tarY, tarZ, tarTheta, &resp[0]);
+		client_socket.Send(resp, sizeof(resp));
+		client_socket.Close();
+	}
+}
+void CMFC_SystemDlg::packetCreat_toPoint(float x, float y, float z, float t, char* report)
+{
+	int temp;
+
+	int X_1 = x*0.01;
+	int X_2 = x - X_1 * 100;
+	temp = x * 100;
+	int X_3 = temp % 100;
+
+	int Y_1 = y*0.01;
+	int Y_2 = y - Y_1 * 100;
+	temp = y * 100;
+	int Y_3 = temp % 100;
+
+	int Z_1 = z*0.01;
+	int Z_2 = z - Z_1 * 100;
+	temp = z * 100;
+	int Z_3 = temp % 100;
+
+	int theta_1 = t*0.01;
+	int theta_2 = t - theta_1 * 100;
+	temp = t * 100;
+	int theta_3 = temp % 100;
+
+	report[0] = 'N';
+	report[1] = '1';
+	report[2] = 'r';
+	report[3] = '2';
+	report[4] = X_1;
+	report[5] = X_2;
+	report[6] = X_3;
+	report[7] = Y_1;
+	report[8] = Y_2;
+	report[9] = Y_3;
+	report[10] = Z_1;
+	report[11] = Z_2;
+	report[12] = Z_3;
+	report[13] = theta_1;
+	report[14] = theta_2;
+	report[15] = theta_3;
 }

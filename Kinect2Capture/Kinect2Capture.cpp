@@ -264,11 +264,9 @@ IplImage * Kinect2Capture::DepthImage()
 	{
 		//copy the depth map to image
 		
-		
 		pFrame->CopyFrameDataToArray(iDepthWidth * iDepthHeight, reinterpret_cast<UINT16*>(mDepthImg.data));
 		pDepthPoints = reinterpret_cast<UINT16*>(mDepthImg.data);
 	   
-	    
 		//convert from 16bit to 8bit
 
 		mDepthImg.convertTo(mDepthImg8bit, CV_8U, 255.0f / 825);

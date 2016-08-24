@@ -2,7 +2,8 @@
 #include"cv.h"
 #include"highgui.h"
 #include "afxwin.h"
-
+#include"stdlib.h"
+#include"math.h"
 
 
 struct CTab2threadParam
@@ -56,12 +57,27 @@ public:
 	afx_msg void OnCbnSelchangeComboobjlist();
 	int ObjectCounter=0;
 
-	void CornerDetection(IplImage * edge_roi, IplImage * CornerImg_Modified,int radius);
-	void CornerFind(IplImage * Cornerimage, IplImage * dst, int radius);
-	CvPoint GetCornerPoint(IplImage * src, IplImage * dst, int radius);
-	CvPoint GetCenterPoint(IplImage * src);
-	int CornerCounter = 0;
+	void CornerDetection(IplImage * edge_roi, IplImage * CornerImg_Modified, int* cornerCount);
+	void HarrisCornerToPoint(IplImage * Cornerimage, IplImage * dst, int* cornerCount);
+	CvPoint GetCentroid(IplImage * src);
+
+
+	void Img2SCARA(int x, int y, float * SCARAX, float * SCARAY, float * SCARAZ);
+
 	CvPoint	CornerPoint[10];
 
+	
+	float phi[4];
+	int FindElement(float fitemp);
+
+	void CornerPointSort(CvPoint3D32f* ObjectPoint);
+
+	int caseClassify(CvPoint3D32f * objPoint);
+
+	int pushClassify(CvPoint3D32f * objPoint);
+
+	void findrange(CvPoint3D32f * objPoint, int radius);
+
+	
 
 };

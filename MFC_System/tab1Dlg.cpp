@@ -40,6 +40,7 @@ BEGIN_MESSAGE_MAP(tab1Dlg, CDialogEx)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_RBUTTONDOWN()
 	ON_WM_LBUTTONUP()
+	ON_BN_CLICKED(IDC_BUTTON_SetReferencePoint, &tab1Dlg::OnBnClickedButtonSetreferencepoint)
 END_MESSAGE_MAP()
 
 BOOL tab1Dlg::OnInitDialog()
@@ -175,7 +176,53 @@ void tab1Dlg::OnMouseMove(UINT nFlags, CPoint point)
 
 void tab1Dlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
-	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	if (point.x > (10) && point.x < (10 + 512) && point.y > 10 && point.y < (10 + 424))
+	{
+		
+	}
 
 	CDialogEx::OnLButtonUp(nFlags, point);
+}
+
+CvPoint GetCenterPoint(IplImage *src)
+{
+	int x0 = 0, y0 = 0, sum = 0;
+	CvPoint center;
+	CvScalar pixel;
+	for (int i = 0; i < src->width; i++) {
+		for (int j = 0; j < src->height; j++) {
+			pixel = cvGet2D(src, j, i);
+			if (pixel.val[0] > 0)
+			{
+				x0 = x0 + i;
+				y0 = y0 + j;
+				sum = sum + 1;
+			}
+		}
+	}
+	if (sum == 0) {
+		center.x = 0;
+		center.y = 0;
+		return center;
+	}
+	center.x = x0 / sum;
+	center.y = y0 / sum;
+	return center;
+}
+void tab1Dlg::OnBnClickedButtonSetreferencepoint()
+{
+	CMFC_SystemDlg mainDlg;
+	IplImage* img_CannyRoi = cvCreateImage(cvGetSize(mainDlg.img_CannyRoiS), mainDlg.img_CannyRoiS->depth,1);
+	cvCopy(mainDlg.img_CannyRoiS, img_CannyRoi);
+	CvPoint RefPointPixel= GetCenterPoint(img_CannyRoi);
+	
+	mainDlg.kinect.Depth2CameraSpace(RefPointPixel.x, RefPointPixel.y);
+	mainDlg.CamRefX =mainDlg.kinect.CameraX * 1000;
+	mainDlg.CamRefY= mainDlg.kinect.CameraY * 1000;
+	
+	mainDlg.CamRefZ = mainDlg.kinect.CameraZ*1000+18;
+	CString str;
+	str.Format(_T("( %.2f  ,  %.2f  ,  %.2f )"), mainDlg.CamRefX, mainDlg.CamRefY, mainDlg.CamRefZ);
+	GetDlgItem(IDC_EDIT_SetreferencePoint)->SetWindowText(str);
+	
 }

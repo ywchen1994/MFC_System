@@ -11,6 +11,7 @@
 #include "CvvImage.h"
 #include"cv.h"
 #include"highgui.h"
+#include<afxsock.h>
 
 struct CMythreadParam
 {
@@ -27,7 +28,7 @@ class tab2Dlg;
 class tab3Dlg;
 class CMFC_SystemDlg : public CDialogEx
 {
-// 建構
+	// 建構
 public:
 	CMFC_SystemDlg(CWnd* pParent = NULL);	// 標準建構函式
 
@@ -36,7 +37,7 @@ public:
 	enum { IDD = IDD_MFC_SYSTEM_DIALOG };
 #endif
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支援
 
 
@@ -58,6 +59,7 @@ public:
 	/***************static******************/
 	static IplImage* img_RgbS;
 	static IplImage* img_DepthS;
+	static float DepthPointsBase[512][424];
 	static IplImage* img_CannyS;
 	static IplImage* img_CannyRoiS;
 	static CvPoint RoiPoint[2];
@@ -72,5 +74,29 @@ public:
 	afx_msg void OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult);
 	/**************************************************************/
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	/************************座標轉換*********************************/
+	static Kinect2Capture kinect;
+	static float CamRefX;
+	static float CamRefY;
+	static float CamRefZ;
+	static CvPoint Center;
+	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	
+	afx_msg void OnBnClickedButtonupdate();
 
+	void packetCreat_toPoint(float x, float y, float z, float t, char * report);
+	
+	void SetPos(float x);
+	float m_Xpos;
+	float m_Ypos;
+	float m_Zpos;
+	float m_Tdeg;
+
+	static float s_Xpos;
+	static float s_Ypos;
+	static float s_Zpos;
+	static float s_Tdeg;
+
+	CIPAddressCtrl m_SCARAIP;
+	CButton m_ImgLockerMDLG;
 };
