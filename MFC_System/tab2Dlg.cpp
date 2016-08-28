@@ -637,6 +637,22 @@ int cmp(const void *a, const void *b)
 	return *(float *)a > *(float *)b ? 1 : -1;
 }
 
+int tab2Dlg::caseClassify(CvPoint3D32f* objPoint)
+{
+	float slope12 = (objPoint[2].z - objPoint[1].z);
+	float slope14 = (objPoint[4].z - objPoint[1].z);
+
+	float flatAllowError = 8;
+	if ((slope12 > 0 - flatAllowError && slope12 < 0 + flatAllowError) && (slope14 > 0 - flatAllowError && slope14 < 0 + flatAllowError))
+		if (objPoint[0].z > 25)
+			return 2;
+		else
+			return 1;
+
+	if ((slope12 < 0 - flatAllowError || slope12 > 0 + flatAllowError) || (slope14 < 0 - flatAllowError || slope14 > 0 + flatAllowError))
+		return 3;
+}
+
 float tab2Dlg::getDegree(CvPoint3D32f first, CvPoint3D32f second)
 {
 	float x = second.x - first.x;
