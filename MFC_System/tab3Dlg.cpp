@@ -12,6 +12,7 @@ class CMFC_SystemDlg;
 
 //P3DX
 ArTcpConnection con;
+ArSerialConnection serial;
 ArRobot robot;
 ArTime start;
 
@@ -45,11 +46,37 @@ END_MESSAGE_MAP()
 
 void tab3Dlg::OnBnClickedButtonrobotfrount()
 {
-	robot.setVel(10);
+	//robot.setVel(10);
+	robot.move(50);
 }
 
 
 void tab3Dlg::OnBnClickedButtonconnect()
 {
-	// TODO: 在此加入控制項告知處理常式程式碼
+	Aria::init();
+	robot.lock();
+	
+	serial.setBaud(9600);
+	serial.setPort("COM5");
+	//con.setPort("192.168.0.100", 8266);
+
+	if (!serial.openSimple())
+	{
+		MessageBox(L"Open failed.");
+		Aria::shutdown();
+	}
+
+	robot.setDeviceConnection(&serial);
+	if (!robot.blockingConnect())
+	{
+		MessageBox(L"Could not connect to robot... exiting\n");
+		//Aria::shutdown();
+	}
+
+	robot.enableMotors();
+	robot.disableSonar();		                 // Disables the sonar.
+	robot.requestEncoderPackets();// Starts a continuous stream of encoder packets.
+
+	robot.runAsync(true);
+	robot.unlock();
 }

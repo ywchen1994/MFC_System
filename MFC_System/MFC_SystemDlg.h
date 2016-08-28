@@ -97,6 +97,8 @@ public:
 	static float s_Zpos;
 	static float s_Tdeg;
 
+	static const int objectdata[3];
 	CIPAddressCtrl m_SCARAIP;
 	CButton m_ImgLockerMDLG;
+
 };

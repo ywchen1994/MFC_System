@@ -9,6 +9,8 @@
 #include"MFC_SystemDlg.h"
 class CMFC_SystemDlg;
 
+const int BlockStep = 12;
+
 // tab2Dlg 對話方塊
 
 IMPLEMENT_DYNAMIC(tab2Dlg, CDialogEx)
@@ -264,12 +266,13 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 					//交換
 					CvPoint temp;
 					temp = CornerPoint[i];
-					CornerPoint[i] = CornerPoint[i+1];
+					CornerPoint[i] = CornerPoint[i + 1];
 					CornerPoint[i + 1] = temp;
 				}
 		//-------------------------------------------------------
 
-		//-------------------
+
+		//算出外圈的點 供推方塊使用
 		CvPoint2D32f mediumPoint[4];
 		mediumPoint[0] = cvPoint2D32f(0.5*(CornerPoint[0].x + CornerPoint[1].x), 0.5*(CornerPoint[0].y + CornerPoint[1].y));
 		mediumPoint[1] = cvPoint2D32f(0.5*(CornerPoint[1].x + CornerPoint[3].x), 0.5*(CornerPoint[1].y + CornerPoint[3].y));
@@ -281,54 +284,70 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 		length[2] = sqrt(pow((mainDlg.Center.x - mediumPoint[2].x), 2) + pow((mainDlg.Center.y - mediumPoint[2].y), 2));
 		length[3] = sqrt(pow((mainDlg.Center.x - mediumPoint[3].x), 2) + pow((mainDlg.Center.y - mediumPoint[3].y), 2));
 		const int radius1 = 35;
-		CvPoint2D32f detectPoint1[4];
+		CvPoint2D32f outPoint1[4];
 		for (int i = 0; i < 4; i++)
 		{
 			float x = (mediumPoint[i].x - mainDlg.Center.x);
 			float y = (mediumPoint[i].y - mainDlg.Center.y);
-			detectPoint1[i] = cvPoint2D32f((x / length[i] * radius1) + mainDlg.Center.x, (y / length[i] * radius1) + mainDlg.Center.y);
+			outPoint1[i] = cvPoint2D32f((x / length[i] * radius1) + mainDlg.Center.x, (y / length[i] * radius1) + mainDlg.Center.y);
 		}
 
+		//2 3 對調 使 點 順時針照順序
+		CvPoint temp;
+		temp = CornerPoint[2];
+		CornerPoint[2] = CornerPoint[3];
+		CornerPoint[3] = temp;
 
-		//const int radius2 = 35;
-		//CvPoint2D32f detectPoint2[4];
-		//for (int i = 0; i < 4; i++)
-		//	detectPoint2[i] = cvPoint2D32f((radius2 / length[i])*(mediumPoint[i].x - mainDlg.Center.x) + mainDlg.Center.x, (radius2 / length[i])*(mediumPoint[i].y - mainDlg.Center.y) + mainDlg.Center.y);
-		
-		CvPoint3D32f outPoint_W[4];
-		for (int i = 0; i < 4; i++)
-			Img2SCARA(detectPoint1[i].x, detectPoint1[i].y, &outPoint_W[i].x, &outPoint_W[i].y, &outPoint_W[i].z);
+		//0 1 要是長邊
+		float distance1, distance2;
+		distance1 = pow((CornerPoint[1].x - CornerPoint[0].x), 2) + pow((CornerPoint[1].y - CornerPoint[0].y), 2);
+		distance2 = pow((CornerPoint[3].x - CornerPoint[0].x), 2) + pow((CornerPoint[3].y - CornerPoint[0].y), 2);
+		if (distance1 < distance2)
+		{
+			CvPoint temp;
+			temp = CornerPoint[1];
+			CornerPoint[1] = CornerPoint[2];
+			CornerPoint[2] = CornerPoint[3];
+			CornerPoint[3] = CornerPoint[0];
+			CornerPoint[0] = temp;
 
-		for (int i = 0; i < 4; i++)
-			cvCircle(imageCorner, cvPoint (detectPoint1[i].x, detectPoint1[i].y), 2, CV_RGB(0, 0, 255), CV_FILLED);
-		//-------------------
+			CvPoint2D32f tempOut;
+			tempOut = outPoint1[1];
+			outPoint1[1] = outPoint1[2];
+			outPoint1[2] = outPoint1[3];
+			outPoint1[3] = outPoint1[0];
+			outPoint1[0] = tempOut;
+		}
 
 		for (int i = 0; i < 4; i++)
 			cvCircle(imageCorner, CornerPoint[i], 3, CV_RGB(0, 255, 0), CV_FILLED);
 
-		cvCircle(imageCorner, mainDlg.Center, 3, CV_RGB(255, 0, 0), CV_FILLED);
+		//轉成順時針
+		int Array1[] = { CornerPoint[1].x - CornerPoint[0].x ,CornerPoint[1].y - CornerPoint[0].y };
+		int Array2[] = { CornerPoint[3].x - CornerPoint[0].x ,CornerPoint[3].y - CornerPoint[0].y };
+		int cross = Array1[0] * Array2[1] - Array1[1] * Array2[0];
 
+		if (cross < 0)
+		{
+			CvPoint temp;
+			temp = CornerPoint[0];
+			CornerPoint[0] = CornerPoint[1];
+			CornerPoint[1] = temp;
 
-		Pos.Format(_T("%d,%d"), CornerPoint[0].x, CornerPoint[0].y);
-		GetDlgItem(IDC_EDIT1_pixel_corner1)->SetWindowTextW(Pos);
+			temp = CornerPoint[2];
+			CornerPoint[2] = CornerPoint[3];
+			CornerPoint[3] = temp;
 
-		Pos.Format(_T("%d,%d"), CornerPoint[1].x, CornerPoint[1].y);
-		GetDlgItem(IDC_EDIT1_pixel_corner2)->SetWindowTextW(Pos);
+			CvPoint2D32f tempOut;
+			tempOut = outPoint1[1];
+			outPoint1[1] = outPoint1[3];
+			outPoint1[3] = tempOut;
+		}
 
-		Pos.Format(_T("%d,%d"), CornerPoint[2].x, CornerPoint[2].y);
-		GetDlgItem(IDC_EDIT1_pixel_corner3)->SetWindowTextW(Pos);
-
-		Pos.Format(_T("%d,%d"), CornerPoint[3].x, CornerPoint[3].y);
-		GetDlgItem(IDC_EDIT1_pixel_corner4)->SetWindowTextW(Pos);
-
-		Pos.Format(_T("%d,%d"), mainDlg.Center.x, mainDlg.Center.y);
-		GetDlgItem(IDC_EDIT1_pixel_cornerCenter)->SetWindowTextW(Pos);
-
-		//showimage
-		CvRect rect = { mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[0].y,mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y };
-		cvSetImageROI(imageCorner, rect);
-		ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
-		m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
+		//將外點 換成世界座標
+		CvPoint3D32f outPoint_World[4];
+		for (int i = 0; i < 4; i++)
+			Img2SCARA(outPoint1[i].x, outPoint1[i].y, &outPoint_World[i].x, &outPoint_World[i].y, &outPoint_World[i].z);
 
 		//內縮角點
 		for (int i = 0; i < 4; i++)
@@ -337,40 +356,175 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 			CornerPoint[i].y = (mainDlg.Center.y + 4 * CornerPoint[i].y) / 5;
 		}
 
-		//5個點 轉成 SCARA座標
+		//5個點 轉成 世界座標
 		CvPoint3D32f ObjectPoint_World[5];
 		Img2SCARA(mainDlg.Center.x, mainDlg.Center.y, &ObjectPoint_World[0].x, &ObjectPoint_World[0].y, &ObjectPoint_World[0].z);
 		Img2SCARA(CornerPoint[0].x, CornerPoint[0].y, &ObjectPoint_World[1].x, &ObjectPoint_World[1].y, &ObjectPoint_World[1].z);
 		Img2SCARA(CornerPoint[1].x, CornerPoint[1].y, &ObjectPoint_World[2].x, &ObjectPoint_World[2].y, &ObjectPoint_World[2].z);
 		Img2SCARA(CornerPoint[2].x, CornerPoint[2].y, &ObjectPoint_World[3].x, &ObjectPoint_World[3].y, &ObjectPoint_World[3].z);
 		Img2SCARA(CornerPoint[3].x, CornerPoint[3].y, &ObjectPoint_World[4].x, &ObjectPoint_World[4].y, &ObjectPoint_World[4].z);
+		//-----------------------------------------------------
 
-		//排序4個角點
-		CornerPointSort(&ObjectPoint_World[0]);
+			//畫出外點
+		for (int i = 0; i < 4; i++)
+			cvCircle(imageCorner, cvPoint(outPoint1[i].x, outPoint1[i].y), 2, CV_RGB(0, 0, 255), CV_FILLED);
+		//畫出內縮角點
+		for (int i = 0; i < 4; i++)
+			cvCircle(imageCorner, CornerPoint[i], 1, CV_RGB(0, 255, 0), CV_FILLED);
+		//畫出中點
+		cvCircle(imageCorner, mainDlg.Center, 3, CV_RGB(255, 0, 0), CV_FILLED);
+
+		//畫上座標
+		Text(imageCorner, "0", outPoint1[0].x, outPoint1[0].y);
+		Text(imageCorner, "1", outPoint1[1].x, outPoint1[1].y);
+		Text(imageCorner, "2", outPoint1[2].x, outPoint1[2].y);
+		Text(imageCorner, "3", outPoint1[3].x, outPoint1[3].y);
+
+		Text(imageCorner, "0", CornerPoint[0].x, CornerPoint[0].y);
+		Text(imageCorner, "1", CornerPoint[1].x, CornerPoint[1].y);
+		Text(imageCorner, "2", CornerPoint[2].x, CornerPoint[2].y);
+		Text(imageCorner, "3", CornerPoint[3].x, CornerPoint[3].y);
+
+		//showimage	 
+		CvRect rect = { mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[0].y,mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y };
+		cvSetImageROI(imageCorner, rect);
+		ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
+		m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
+
+		Pos.Format(_T("%d,%d"), CornerPoint[0].x, CornerPoint[0].y);
+		GetDlgItem(IDC_EDIT1_pixel_corner1)->SetWindowTextW(Pos);
+		Pos.Format(_T("%d,%d"), CornerPoint[1].x, CornerPoint[1].y);
+		GetDlgItem(IDC_EDIT1_pixel_corner2)->SetWindowTextW(Pos);
+		Pos.Format(_T("%d,%d"), CornerPoint[2].x, CornerPoint[2].y);
+		GetDlgItem(IDC_EDIT1_pixel_corner3)->SetWindowTextW(Pos);
+		Pos.Format(_T("%d,%d"), CornerPoint[3].x, CornerPoint[3].y);
+		GetDlgItem(IDC_EDIT1_pixel_corner4)->SetWindowTextW(Pos);
+		Pos.Format(_T("%d,%d"), mainDlg.Center.x, mainDlg.Center.y);
+		GetDlgItem(IDC_EDIT1_pixel_cornerCenter)->SetWindowTextW(Pos);
+
 		//判斷擺放case
 		int ObjCase = caseClassify(&ObjectPoint_World[0]);
 		//判斷推的問題
 
-		
+		//判斷有幾個東西在四周
+		int blockCount = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			if (outPoint_World[i].z > BlockStep)
+			{
+				blockCount++;
+			}
+		}
 
+
+		CvPoint3D32f pushPoint[2];
+		CvPoint3D32f grabPoint;
+		float deg;
 
 		switch (ObjCase)
 		{
-		case 1:
-			mainDlg.SetPos(ObjectPoint_World[0].x);
-
+		case 1:  //平放
+		{
+			switch (blockCount)
+			{
+			case 0://平面旁邊無東西
+			{
+				//夾取位置 
+				grabPoint = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, 18);
+				deg = getDegree(ObjectPoint_World[0], outPoint_World[0]);
+			}
 			break;
-		case 2:
-
-	
+			case 1://平面 旁邊一個block
+			{
+				if ((outPoint_World[1].z < BlockStep) && (outPoint_World[3].z < BlockStep))//block在長邊
+				{
+					//從短邊推
+					pushPoint[1] = ObjectPoint_World[0];//=中心
+					pushPoint[0] = outPoint_World[1];//短邊外面
+					deg = getDegree(pushPoint[0], pushPoint[1]);
+				}
+				else // block 在短邊
+				{
+					//直接夾
+					grabPoint = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, 18);
+					deg = getDegree(ObjectPoint_World[0], outPoint_World[0]);
+				}
+			}
 			break;
-		case 3:
-			//pushClassify();
-			break;
-		default:
-			break;
+			}
 		}
-	}
+		break;
+		case 2:  //平放堆疊
+		{
+
+		}
+		break;
+		case 3: //斜面
+		{
+			switch (blockCount)
+			{
+			case 0:
+			{
+
+			}
+			break;
+			case 1: //斜面 正常狀況
+			{
+				if ((outPoint_World[1].z > BlockStep) || (outPoint_World[3].z > BlockStep))//block在短邊
+				{
+					//夾取
+					grabPoint = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, 36);
+					deg = getDegree(ObjectPoint_World[0], outPoint_World[0]);
+				}
+				if ((outPoint_World[0].z > BlockStep) || (outPoint_World[2].z > BlockStep))//block在長邊
+				{
+					//找高邊
+					if (outPoint_World[4].z > outPoint_World[1].z)//表示 block在outPoint 2
+					{
+						//從 outPoint 2 往 center 推
+						pushPoint[0] = outPoint_World[2];
+						pushPoint[1] = ObjectPoint_World[0];
+						deg = getDegree(pushPoint[0], pushPoint[1]);
+					}
+					else if (outPoint_World[4].z < outPoint_World[1].z)//表示 block在outPoint 0
+					{
+						//從 outPoint 0 往 center 推
+						pushPoint[0] = outPoint_World[0];
+						pushPoint[1] = ObjectPoint_World[0];
+						deg = getDegree(pushPoint[0], pushPoint[1]);
+					}
+				}
+			}
+			break;
+			case 2: //斜面 旁邊有一個障礙物
+			{
+				//從高邊 往 center推
+				pushPoint[0] = outPoint_World[findHighestSide(ObjectPoint_World)];
+				pushPoint[1] = ObjectPoint_World[0];
+				deg = getDegree(pushPoint[0], pushPoint[1]);
+			}
+			break;
+			case 3:
+			{
+				//從高邊 往 center推
+				pushPoint[0] = outPoint_World[findHighestSide(ObjectPoint_World)];
+				pushPoint[1] = ObjectPoint_World[0];
+				deg = getDegree(pushPoint[0], pushPoint[1]);
+			}
+			break;
+			case 4:
+			{
+				//從高邊 往 center推
+				pushPoint[0] = outPoint_World[findHighestSide(ObjectPoint_World)];
+				pushPoint[1] = ObjectPoint_World[0];
+				deg = getDegree(pushPoint[0], pushPoint[1]);
+			}
+			break;
+			}//switch (blockCount)
+		}
+		break;//斜面
+		}//switch ObjCase
+	}//if (cornerNum == 4)
 	else//若角點不是四個 則單純顯示圖片(不畫出角點)
 	{
 		//showimage
@@ -462,13 +616,14 @@ void tab2Dlg::Img2SCARA(int x, int y, float *SCARAX, float *SCARAY, float *SCARA
 	CMFC_SystemDlg mainDlg;
 	
 	mainDlg.kinect.Depth2CameraSpace(x, y);
-	*SCARAX = mainDlg.CamRefY  + 280 - mainDlg.kinect.CameraY * 1000;
+	*SCARAX = mainDlg.CamRefY - (mainDlg.kinect.CameraY * 1000) + 280 ;
 
-	*SCARAY = mainDlg.CamRefX + 410 - mainDlg.kinect.CameraX * 1000;
+	*SCARAY = mainDlg.CamRefX - (mainDlg.kinect.CameraX * 1000) - 410;
 
-	*SCARAZ = mainDlg.DepthPointsBase[x][y] - mainDlg.kinect.CameraZ * 1000;
+	*SCARAZ = (mainDlg.DepthPointsBase[x][y] - mainDlg.kinect.CameraZ * 1000);
 
-	//*SCARAZ = mainDlg.CamRefZ - mainDlg.kinect.CameraZ * 1000;
+	//*SCARAZ = 183-(mainDlg.DepthPointsBase[x][y] - mainDlg.kinect.CameraZ * 1000);
+	//上面才是SCARA座標
 
 }
 int tab2Dlg::FindElement(float fitemp)
@@ -481,80 +636,39 @@ int cmp(const void *a, const void *b)
 {
 	return *(float *)a > *(float *)b ? 1 : -1;
 }
-void tab2Dlg::CornerPointSort(CvPoint3D32f* ObjectPoint)
+
+float tab2Dlg::getDegree(CvPoint3D32f first, CvPoint3D32f second)
 {
-	CvPoint3D32f ObjectPointCopy[5] = {};
-	memcpy(ObjectPointCopy, ObjectPoint, 5*3*sizeof(ObjectPoint));
+	float x = second.x - first.x;
+	float y = first.y - second.y;
+	float m = x / -y;
+	float degree;
 
-	float fitmp1, fitmp2, fitmp3, fitmp4;
+	degree = -atan(m);
 
-	fitmp1 = atan2((ObjectPointCopy[1].y - ObjectPointCopy[0].y), (ObjectPointCopy[1].x - ObjectPointCopy[0].x)) * 180 / CV_PI;
-	if (fitmp1 < 0)fitmp1 = fitmp1 + 360;
-	phi[0] = fitmp1;
-	
-	fitmp2 = atan2((ObjectPointCopy[2].y - ObjectPointCopy[0].y), (ObjectPointCopy[2].x - ObjectPointCopy[0].x)) * 180 / CV_PI;
-	if (fitmp2 < 0)fitmp2 = fitmp2 + 360;
-	phi[1] = fitmp2;
-
-	fitmp3 = atan2((ObjectPointCopy[3].y - ObjectPointCopy[0].y), (ObjectPointCopy[3].x - ObjectPointCopy[0].x)) * 180 / CV_PI;
-	if (fitmp3 < 0)fitmp3 = fitmp3 + 360;
-	phi[2] = fitmp3;
-
-	fitmp4 = atan2((ObjectPointCopy[4].y - ObjectPointCopy[0].y), (ObjectPointCopy[4].x - ObjectPointCopy[0].x)) * 180 / CV_PI;
-	if (fitmp4 < 0)fitmp4 = fitmp4 + 360;
-	phi[3] = fitmp4;
-
-	qsort(phi, 4, sizeof(phi[0]), cmp);
-
-	ObjectPoint[FindElement(fitmp1)+1] = ObjectPointCopy[1];
-
-	ObjectPoint[FindElement(fitmp2)+1] = ObjectPointCopy[2];
-
-	ObjectPoint[FindElement(fitmp3)+1] = ObjectPointCopy[3];
-	
-	ObjectPoint[FindElement(fitmp4)+1] = ObjectPointCopy[4];
-
+	return degree*180/ 3.1415926535897932384626433832;
 }
 
-int tab2Dlg::caseClassify(CvPoint3D32f* objPoint)
+int tab2Dlg::findHighestSide(CvPoint3D32f * objPoint)
 {
-	const int correctZ = 0;
-	float slope12 = (objPoint[2].z - correctZ - objPoint[1].z);
+	float slope12 = (objPoint[2].z - objPoint[1].z);
 	float slope14 = (objPoint[4].z - objPoint[1].z);
 
-	//float vector12 = (objPoint[2].z + correctZ - objPoint[1].z) / (sqrt(pow(abs(objPoint[2].x - objPoint[1].x), 2) + pow(abs(objPoint[2].y - objPoint[1].y), 2)));
-	//float vector14 = (objPoint[4].z - objPoint[1].z) / (sqrt(pow(abs(objPoint[4].x - objPoint[1].x), 2) + pow(abs(objPoint[4].y - objPoint[1].y), 2)));
-	//float slope12 = (objPoint[2].z + correctZ - objPoint[1].z) / vector12;
-	//float slope14 = (objPoint[4].z - objPoint[1].z) / vector14;
-
-	float flatAllowError = 8;
-	if ((slope12 > 0 - flatAllowError && slope12 < 0 + flatAllowError) && (slope14 > 0 - flatAllowError && slope14 < 0 + flatAllowError))
-		if (objPoint[0].z > 25)
-			return 2;
-		else
-			return 1;
-
-	if ((slope12 < 0 - flatAllowError || slope12 > 0 + flatAllowError) || (slope14 < 0 - flatAllowError || slope14 > 0 + flatAllowError))
-		return 3;
-
-}
-int tab2Dlg::pushClassify(CvPoint3D32f* objPoint)
-{
-	float m12 = (objPoint[2].y - objPoint[1].y) / (objPoint[2].x - objPoint[1].x);
-	return 0;
-}
-void tab2Dlg::findrange(CvPoint3D32f* objPoint,int radius)
-{
-	//radius 40/2 pixel
-	CvPoint2D32f detectPoint[8];
-	CvPoint2D32f mediumPoint = cvPoint2D32f(0.5*(objPoint[0].x + objPoint[3].x), 0.5*(objPoint[0].y + objPoint[3].y));
-	float length = sqrt(pow((mediumPoint.x - objPoint[0].x), 2) + pow((mediumPoint.y - objPoint[0].y), 2));
-	float ratio = radius / length;
-	detectPoint[0] = cvPoint2D32f(ratio*(mediumPoint.x- objPoint[0].x)+ objPoint[0].x, ratio*(mediumPoint.y - objPoint[0].y)+ objPoint[0].y);
-	for (int i = 1; i < 5; i++)
+	float flatAllowError = 5;
+	if ((slope12 > 0 - flatAllowError && slope12 < 0 + flatAllowError))// 1 2 objPoint 水平
 	{
-		length = sqrt(pow((objPoint[i].x - objPoint[0].x), 2) + pow((objPoint[i].y - objPoint[0].y), 2));
-		ratio = radius / length;
-		detectPoint[i]= cvPoint2D32f(ratio*(objPoint[i].x - objPoint[0].x) + objPoint[0].x, ratio*(objPoint[i].y - objPoint[0].y) + objPoint[0].y);
+		//比較 1 4 objPoint 哪個高
+		if (objPoint[1].z > objPoint[4].z)
+			return 0;//outpoint 0 是高邊
+		else if (objPoint[4].z > objPoint[1].z)
+			return 2;//outpoint 2 是高邊
+	}
+	else if((slope14 > 0 - flatAllowError && slope14 < 0 + flatAllowError))// 1 4 objPoint 水平
+	{
+		//比較 1 2 objPoint 哪個高
+		if (objPoint[1].z > objPoint[2].z)
+			return 3;//outpoint 3 是高邊
+		else if (objPoint[2].z > objPoint[1].z)
+			return 1;//outpoint 1 是高邊
 	}
 }

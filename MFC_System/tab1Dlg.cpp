@@ -179,8 +179,10 @@ void tab1Dlg::OnLButtonUp(UINT nFlags, CPoint point)
 	if (point.x > (10) && point.x < (10 + 512) && point.y > 10 && point.y < (10 + 424))
 	{
 		
-	}
 
+
+
+	}
 	CDialogEx::OnLButtonUp(nFlags, point);
 }
 
@@ -209,6 +211,7 @@ CvPoint GetCenterPoint(IplImage *src)
 	center.y = y0 / sum;
 	return center;
 }
+
 void tab1Dlg::OnBnClickedButtonSetreferencepoint()
 {
 	CMFC_SystemDlg mainDlg;
@@ -219,8 +222,7 @@ void tab1Dlg::OnBnClickedButtonSetreferencepoint()
 	mainDlg.kinect.Depth2CameraSpace(RefPointPixel.x, RefPointPixel.y);
 	mainDlg.CamRefX =mainDlg.kinect.CameraX * 1000;
 	mainDlg.CamRefY= mainDlg.kinect.CameraY * 1000;
-	
-	mainDlg.CamRefZ = mainDlg.kinect.CameraZ*1000+18;
+
 	CString str;
 	str.Format(_T("( %.2f  ,  %.2f  ,  %.2f )"), mainDlg.CamRefX, mainDlg.CamRefY, mainDlg.CamRefZ);
 	GetDlgItem(IDC_EDIT_SetreferencePoint)->SetWindowText(str);

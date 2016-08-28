@@ -6,6 +6,7 @@
 #include"math.h"
 
 
+
 struct CTab2threadParam
 {
 public:
@@ -50,7 +51,6 @@ public:
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	CStatic m_img_approxPoly;
 
-	void ImageProcessing(IplImage * img_roi);
 	void ApproxPoly(IplImage * img_roi);
 	void findinside(IplImage * Img);
 	CComboBox m_combo_objList;
@@ -65,19 +65,16 @@ public:
 	void Img2SCARA(int x, int y, float * SCARAX, float * SCARAY, float * SCARAZ);
 
 	CvPoint	CornerPoint[10];
-
+	
 	
 	float phi[4];
 	int FindElement(float fitemp);
 
-	void CornerPointSort(CvPoint3D32f* ObjectPoint);
-
 	int caseClassify(CvPoint3D32f * objPoint);
 
-	int pushClassify(CvPoint3D32f * objPoint);
+	float getDegree(CvPoint3D32f first, CvPoint3D32f second);
 
-	void findrange(CvPoint3D32f * objPoint, int radius);
-
+	int findHighestSide(CvPoint3D32f* objPoint);
 	
 
 };

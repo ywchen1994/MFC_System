@@ -29,6 +29,7 @@ float CMFC_SystemDlg::s_Xpos = 0;
 float CMFC_SystemDlg::s_Ypos = 0;
 float CMFC_SystemDlg::s_Zpos = 0;
 float CMFC_SystemDlg::s_Tdeg = 0;
+ int const CMFC_SystemDlg::objectdata[3] = {85,56,19};
 
 CMFC_SystemDlg::CMFC_SystemDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_MFC_SYSTEM_DIALOG, pParent)
@@ -153,23 +154,25 @@ void CMFC_SystemDlg::OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult)
 	}
 	*pResult = 0;
 }
-
+int LBottomClicktimes = 0;
 void CMFC_SystemDlg::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	if (!m_ImgLockerMDLG.GetCheck()) {
-		if (point.x > 10 && point.x < (10 + 320) && point.y > 10 && point.y < (10 + 240))
+		if (point.x > 10 && point.x < (10 + 320) && point.y > 10 && point.y < (10 + 240) &&   LBottomClicktimes<2)
 		{
 			m_threadPara.m_case = 0;
 			m_threadPara.hWnd = m_hWnd;
 			m_lpThread = AfxBeginThread(&CMFC_SystemDlg::MythreadFun, (LPVOID)&m_threadPara);
 		}
-		if (point.x > 10 + 320 && point.x < (10 + 320 + 320) && point.y > 10 && point.y < (10 + 240))
+		if (point.x > 10 + 320 && point.x < (10 + 320 + 320) && point.y > 10 && point.y < (10 + 240) && LBottomClicktimes <2)
 		{
 			m_threadPara.m_case = 1;
 			m_threadPara.hWnd = m_hWnd;
 			m_lpThread = AfxBeginThread(&CMFC_SystemDlg::MythreadFun, (LPVOID)&m_threadPara);
 		}
 	}
+	if(point.x > 10 && point.x < (10 + 320 + 320) && point.y > 10 && point.y < (10 + 240))
+	LBottomClicktimes++;
 	CDialogEx::OnLButtonDown(nFlags, point);
 }
 
@@ -248,6 +251,7 @@ void CMFC_SystemDlg::OnRButtonDown(UINT nFlags, CPoint point)
 					DepthPointsBase[i][j] = kinect.pDepthPoints[i + 512 * j];//³æ¦ì¬Omm
 		}
 	}
+	MessageBox(_T("Set Depth Done"));
 	CDialogEx::OnRButtonDown(nFlags, point);
 }
 
