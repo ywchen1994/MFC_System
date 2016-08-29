@@ -55,11 +55,22 @@ public:
 	void findinside(IplImage * Img);
 	CComboBox m_combo_objList;
 	afx_msg void OnCbnSelchangeComboobjlist();
+	int grabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* degree);
+	void SpecilGrabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* degree);
+
+	CvPoint GetClosestPoint(IplImage * src, CvPoint center);
+
+	void sequencePoint(CvPoint* corner, CvPoint center, CvPoint2D32f* outside);
+	
+	int priority = 0;
+	CvPoint3D32f m_pushPoint[2];
+	float m_degree;
+
 	int ObjectCounter=0;
 
 	void CornerDetection(IplImage * edge_roi, IplImage * CornerImg_Modified, int* cornerCount);
 	void HarrisCornerToPoint(IplImage * Cornerimage, IplImage * dst, int* cornerCount);
-	CvPoint GetCentroid(IplImage * src);
+	CvPoint GetCenter(IplImage * src);
 
 
 	void Img2SCARA(int x, int y, float * SCARAX, float * SCARAY, float * SCARAZ);
@@ -76,5 +87,18 @@ public:
 
 	int findHighestSide(CvPoint3D32f* objPoint);
 	
+	CvPoint3D32f extendPoint(CvPoint3D32f first, CvPoint3D32f second, int value);
 
+	
+
+	afx_msg void OnBnClickedButtonstartgrab();
+	afx_msg void OnBnClickedButtonautobinpick();
+	int m_priorityShow;
+	CListBox m_list_detectNum;
+	afx_msg void OnLbnSelchangeListdetectnum();
+	CListBox m_list_priority;
+	afx_msg void OnBnClickedButtontoppriority();
+	afx_msg void OnBnClickedButtongopushpoint1();
+	afx_msg void OnBnClickedButtongopushpoint2();
+	afx_msg void OnBnClickedButtongopushpoint3();
 };

@@ -20,7 +20,7 @@ IplImage*CMFC_SystemDlg::img_DepthS=nullptr;
 float CMFC_SystemDlg::DepthPointsBase[512][424]= { 0 };
 IplImage*CMFC_SystemDlg::img_RgbS = nullptr;
 IplImage*CMFC_SystemDlg::img_CannyS = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
-IplImage*CMFC_SystemDlg::img_CannyRoiS = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
+IplImage*CMFC_SystemDlg::sImg_CannyRoiS = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
 float CMFC_SystemDlg::CamRefX = 0;
 float CMFC_SystemDlg::CamRefY = 0;
 float CMFC_SystemDlg::CamRefZ = 0;
@@ -30,6 +30,8 @@ float CMFC_SystemDlg::s_Ypos = 0;
 float CMFC_SystemDlg::s_Zpos = 0;
 float CMFC_SystemDlg::s_Tdeg = 0;
  int const CMFC_SystemDlg::objectdata[3] = {85,56,19};
+
+ CString CMFC_SystemDlg::ip_SCARA = _T("192.168.1.3");
 
 CMFC_SystemDlg::CMFC_SystemDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_MFC_SYSTEM_DIALOG, pParent)
@@ -59,7 +61,10 @@ BEGIN_MESSAGE_MAP(CMFC_SystemDlg, CDialogEx)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB, &CMFC_SystemDlg::OnTcnSelchangeTab)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_RBUTTONDOWN()
-	ON_BN_CLICKED(IDC_BUTTON_update, &CMFC_SystemDlg::OnBnClickedButtonupdate)
+	
+	ON_BN_CLICKED(IDC_BUTTON_Home, &CMFC_SystemDlg::OnBnClickedButtonHome)
+	ON_BN_CLICKED(IDC_BUTTON_Ref, &CMFC_SystemDlg::OnBnClickedButtonRef)
+	ON_BN_CLICKED(IDC_BUTTON_grab, &CMFC_SystemDlg::OnBnClickedButtongrab)
 END_MESSAGE_MAP()
 
 
@@ -234,7 +239,7 @@ void CMFC_SystemDlg::Thread_Image_Depth(LPVOID lParam)
 		if (img_DepthS != NULL)
 		{
 			hWnd->ShowImage(img_DepthS, hWnd->GetDlgItem(IDC_IMAGE_DepthLive), 1);
-			cvCanny(img_DepthS, img_CannyS,8,15);//@canny value
+			cvCanny(img_DepthS, img_CannyS,8,20);//@canny value
 
 			cvReleaseImage(&img_DepthS);
 		}
@@ -260,37 +265,14 @@ void CMFC_SystemDlg::SetPos(float x)
 	m_Xpos = x;
 }
 
-void CMFC_SystemDlg::OnBnClickedButtonupdate()
-{
-	UpdateData(false);
-	
-	//夾爪夾取 寫這裡
 
-	float tarX = 280;
-	float tarY = 410;
-	float tarZ = 50;
-	float tarTheta = 0;
+void CMFC_SystemDlg::packetCreat_toPoint(float x, float y, float z, float t)
+{
 	AfxSocketInit();
 	CSocket client_socket;
-	CString csIP;
-	m_SCARAIP.GetWindowTextW(csIP);
 
-	char resp[256];
+	char resp[32];
 
-	if (!client_socket.Create())
-	{
-		MessageBox(_T("Create Faild"));
-		return;
-	}
-	if (client_socket.Connect(csIP, 8888))
-	{
-		packetCreat_toPoint(tarX, tarY, tarZ, tarTheta, &resp[0]);
-		client_socket.Send(resp, sizeof(resp));
-		client_socket.Close();
-	}
-}
-void CMFC_SystemDlg::packetCreat_toPoint(float x, float y, float z, float t, char* report)
-{
 	int temp;
 
 	int X_1 = x*0.01;
@@ -303,6 +285,7 @@ void CMFC_SystemDlg::packetCreat_toPoint(float x, float y, float z, float t, cha
 	temp = y * 100;
 	int Y_3 = temp % 100;
 
+	z = 183 - z;
 	int Z_1 = z*0.01;
 	int Z_2 = z - Z_1 * 100;
 	temp = z * 100;
@@ -313,20 +296,85 @@ void CMFC_SystemDlg::packetCreat_toPoint(float x, float y, float z, float t, cha
 	temp = t * 100;
 	int theta_3 = temp % 100;
 
-	report[0] = 'N';
-	report[1] = '1';
-	report[2] = 'r';
-	report[3] = '2';
-	report[4] = X_1;
-	report[5] = X_2;
-	report[6] = X_3;
-	report[7] = Y_1;
-	report[8] = Y_2;
-	report[9] = Y_3;
-	report[10] = Z_1;
-	report[11] = Z_2;
-	report[12] = Z_3;
-	report[13] = theta_1;
-	report[14] = theta_2;
-	report[15] = theta_3;
+	resp[0] = 'N';
+	resp[1] = '1';
+	resp[2] = 'r';
+	resp[3] = '2';
+	resp[4] = X_1;
+	resp[5] = X_2;
+	resp[6] = X_3;
+	resp[7] = Y_1;
+	resp[8] = Y_2;
+	resp[9] = Y_3;
+	resp[10] = Z_1;
+	resp[11] = Z_2;
+	resp[12] = Z_3;
+	resp[13] = theta_1;
+	resp[14] = theta_2;
+	resp[15] = theta_3;
+
+	if (!client_socket.Create())
+	{
+		MessageBox(L"Create Faild");
+	}
+
+	if (client_socket.Connect(ip_SCARA, 8888))
+	{
+		client_socket.Send(resp, sizeof(resp));
+		client_socket.Close();
+	}
+	else
+	{
+		MessageBox(L"Connect fail");
+	}
+
+}
+
+void CMFC_SystemDlg::OnBnClickedButtonHome()
+{
+	UpdateData(false);
+	m_SCARAIP.GetWindowTextW(ip_SCARA);
+	//夾爪夾取 寫這裡
+
+	float tarX = 550;
+	float tarY = 0;
+	float tarZ =133;
+	float tarTheta = 0;
+
+	packetCreat_toPoint(tarX, tarY, tarZ, tarTheta);
+}
+
+
+void CMFC_SystemDlg::OnBnClickedButtonRef()
+{
+	
+	float tarX = 280;
+	float tarY = -410;
+	float tarZ = 133;
+	float tarTheta = 0;
+
+	packetCreat_toPoint(tarX, tarY, tarZ, tarTheta);
+
+}
+void CMFC_SystemDlg::grab()
+{
+	AfxSocketInit();
+	CSocket client_socket;
+
+	char resp[]= "N1r3";
+	if (!client_socket.Create())
+	{
+			MessageBox(L"Create Faild");
+		return;
+	}
+	else if (client_socket.Connect(ip_SCARA, 8888))
+	{
+		client_socket.Send(resp, sizeof(resp));
+	}
+	client_socket.Close();
+}
+
+void CMFC_SystemDlg::OnBnClickedButtongrab()
+{
+	grab();
 }

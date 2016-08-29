@@ -17,6 +17,7 @@ IMPLEMENT_DYNAMIC(tab2Dlg, CDialogEx)
 
 tab2Dlg::tab2Dlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_DIALOG_tab2, pParent)
+	, m_priorityShow(0)
 {
 
 }
@@ -31,12 +32,22 @@ void tab2Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_IMAGE_CannyRoi, m_img_CannyRoi);
 	DDX_Control(pDX, IDC_IMAGE_ApproxPoly, m_img_approxPoly);
 	DDX_Control(pDX, IDC_COMBO_objList, m_combo_objList);
+	DDX_Text(pDX, IDC_EDIT1, m_priorityShow);
+	DDX_Control(pDX, IDC_LIST_detectNum, m_list_detectNum);
+	DDX_Control(pDX, IDC_LIST_priority, m_list_priority);
 }
 
 
 BEGIN_MESSAGE_MAP(tab2Dlg, CDialogEx)
 	ON_WM_LBUTTONDOWN()
 	ON_CBN_SELCHANGE(IDC_COMBO_objList, &tab2Dlg::OnCbnSelchangeComboobjlist)
+	ON_BN_CLICKED(IDC_BUTTON_startGrab, &tab2Dlg::OnBnClickedButtonstartgrab)
+	ON_BN_CLICKED(IDC_BUTTON_autoBinPick, &tab2Dlg::OnBnClickedButtonautobinpick)
+	ON_LBN_SELCHANGE(IDC_LIST_detectNum, &tab2Dlg::OnLbnSelchangeListdetectnum)
+	ON_BN_CLICKED(IDC_BUTTON_topPriority, &tab2Dlg::OnBnClickedButtontoppriority)
+	ON_BN_CLICKED(IDC_BUTTON_goPushPoint1, &tab2Dlg::OnBnClickedButtongopushpoint1)
+	ON_BN_CLICKED(IDC_BUTTON_goPushPoint2, &tab2Dlg::OnBnClickedButtongopushpoint2)
+	ON_BN_CLICKED(IDC_BUTTON_goPushPoint3, &tab2Dlg::OnBnClickedButtongopushpoint3)
 END_MESSAGE_MAP()
 
 
@@ -98,16 +109,17 @@ void tab2Dlg::Thread_Image_CannyRoi(LPVOID lParam)
 	CTab2threadParam * Thread_Info = (CTab2threadParam *)lParam;
 	tab2Dlg * hWnd = (tab2Dlg *)CWnd::FromHandle((HWND)Thread_Info->hWnd);
 	CMFC_SystemDlg mainDlg;
-	IplImage* CannyRoi_C1 = nullptr;
+	IplImage* CannyRoi_Ch1 = nullptr;
 	while (1)
 	{
-		CannyRoi_C1 = cvCreateImage(cvGetSize(mainDlg.img_CannyRoiS), IPL_DEPTH_8U, 1);
-		cvCopy(mainDlg.img_CannyRoiS, CannyRoi_C1);
+		CannyRoi_Ch1 = cvCreateImage(cvGetSize(mainDlg.sImg_CannyRoiS), IPL_DEPTH_8U, 1);
+		cvCopy(mainDlg.sImg_CannyRoiS, CannyRoi_Ch1);
 		CvRect rect = { mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[0].y,mainDlg.RoiPoint[1].x- mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y };
-		cvSetImageROI(CannyRoi_C1, rect);
+		cvSetImageROI(CannyRoi_Ch1, rect);
 		hWnd->GetDlgItem(IDC_IMAGE_CannyRoi)->SetWindowPos(NULL, 10, 10, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
-		hWnd->ShowImage(CannyRoi_C1, hWnd->GetDlgItem(IDC_IMAGE_CannyRoi), 1,cvSize(2*(mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2*(mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
-		cvReleaseImage(&CannyRoi_C1);
+		
+		hWnd->ShowImage(CannyRoi_Ch1, hWnd->GetDlgItem(IDC_IMAGE_CannyRoi), 1,cvSize(2*(mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2*(mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
+		cvReleaseImage(&CannyRoi_Ch1);
 	}
 }
 
@@ -124,6 +136,8 @@ void tab2Dlg::OnLButtonDown(UINT nFlags, CPoint point)
 	{
 		ObjectCounter = 0;
 		m_combo_objList.ResetContent();
+		m_list_detectNum.ResetContent();
+		m_list_priority.ResetContent();
 		SetDlgItemText(IDC_EDIT1_pixel_corner1, _T("0"));
 		SetDlgItemText(IDC_EDIT1_pixel_corner2, _T("0"));
 		SetDlgItemText(IDC_EDIT1_pixel_corner3, _T("0"));
@@ -132,15 +146,14 @@ void tab2Dlg::OnLButtonDown(UINT nFlags, CPoint point)
 
 		system("del .\\ApproxPolyPics\\*.jpg");
 		CMFC_SystemDlg mainDlg;
-		IplImage*  img_CannyRoi = cvCreateImage(cvGetSize(mainDlg.img_CannyRoiS), IPL_DEPTH_8U, 1);
-		cvCopy(mainDlg.img_CannyRoiS, img_CannyRoi);
+		IplImage*  img_CannyRoi = cvCreateImage(cvGetSize(mainDlg.sImg_CannyRoiS), IPL_DEPTH_8U, 1);
+		cvCopy(mainDlg.sImg_CannyRoiS, img_CannyRoi);
 		//影像處理 閉合破碎
 		IplConvKernel *pKernel = NULL;
-		pKernel = cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_CROSS, NULL);
+		pKernel = cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_RECT, NULL);
 		cvDilate(img_CannyRoi, img_CannyRoi, cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_RECT, NULL), 1);
 		cvErode(img_CannyRoi, img_CannyRoi, pKernel, 1);
 		
-
 		ApproxPoly(img_CannyRoi);
 	}
 	CDialogEx::OnLButtonDown(nFlags, point);
@@ -211,8 +224,10 @@ void tab2Dlg::findinside(IplImage *Img)
 		CString objNum;
 		objNum.Format(_T("%d"), ObjectCounter);
 		m_combo_objList.InsertString(ObjectCounter, objNum);
+		m_list_detectNum.InsertString(ObjectCounter, objNum);
 		m_combo_objList.SetCurSel(ObjectCounter);
-		/***************************************/
+		//m_list_detectNum.SetCurSel(ObjectCounter);
+		/**************************************************/
 		cvSaveImage(SaveImgPath, mask);
 		ObjectCounter++;
 
@@ -235,10 +250,27 @@ void Text(IplImage* img, const char* text, int x, int y)
 void tab2Dlg::OnCbnSelchangeComboobjlist()
 {
 	int select = m_combo_objList.GetCurSel();
-	CString Pos;
+	priority = grabDecision(select, &m_pushPoint[0], &m_degree);
+	m_priorityShow = priority;
+	UpdateData(0);
+	return;
+}
 
+void tab2Dlg::OnLbnSelchangeListdetectnum()
+{
+	int select = m_list_detectNum.GetCurSel();
+	priority = grabDecision(select, &m_pushPoint[0], &m_degree);
+	m_list_priority.SetCurSel(select);
+	m_priorityShow = priority;
+	UpdateData(0);
+	return;
+}
+
+
+int tab2Dlg::grabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* degree)
+{
 	char path[100];
-	sprintf(path, "ApproxPolyPics/inside%d.jpg", select);
+	sprintf(path, "ApproxPolyPics/inside%d.jpg", pictureSelcet);
 	IplImage* ImageLoad = cvLoadImage(path, 0);
 	IplImage* ImgApproxPolyLoad = cvCreateImage(cvGetSize(ImageLoad), ImageLoad->depth, 1);
 	cvCopy(ImageLoad, ImgApproxPolyLoad);
@@ -246,108 +278,91 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 
 	//找中心點
 	CMFC_SystemDlg mainDlg;
-	mainDlg.Center = GetCentroid(ImgApproxPolyLoad);
+	mainDlg.Center = GetCenter(ImgApproxPolyLoad);
 
 	//找角點 跟 角點個數  (CornerPoint 已經放入)
 	IplImage* imageCorner = cvCreateImage(cvGetSize(ImgApproxPolyLoad), ImgApproxPolyLoad->depth, 3);
 	int cornerNum;
 	CornerDetection(ImgApproxPolyLoad, imageCorner, &cornerNum);
+	cvCvtColor(ImgApproxPolyLoad, imageCorner, CV_GRAY2RGB);
 
 	//若角點為4個   //若不是 則單純顯示圖片(不畫出角點)
 	if (cornerNum == 4)
 	{
-		cvCvtColor(ImgApproxPolyLoad, imageCorner, CV_GRAY2RGB);
 
-		//-----排序 CornerPoint x 小到大(左到右)--------------------
-		for (int n = 0; n < 3; n++)//做三次
-			for (int i = 0; i < 3; i++)//0跟1比......2跟3比
-				if (CornerPoint[i].x > CornerPoint[i + 1].x)
-				{
-					//交換
-					CvPoint temp;
-					temp = CornerPoint[i];
-					CornerPoint[i] = CornerPoint[i + 1];
-					CornerPoint[i + 1] = temp;
-				}
-		//-------------------------------------------------------
+		//重新校正中心點 (利用4個點的中心 而非所有邊框)
+		mainDlg.Center.x = (CornerPoint[0].x + CornerPoint[1].x + CornerPoint[2].x + CornerPoint[3].x) / 4;
+		mainDlg.Center.y = (CornerPoint[0].y + CornerPoint[1].y + CornerPoint[2].y + CornerPoint[3].y) / 4;
 
 
-		//算出外圈的點 供推方塊使用
-		CvPoint2D32f mediumPoint[4];
-		mediumPoint[0] = cvPoint2D32f(0.5*(CornerPoint[0].x + CornerPoint[1].x), 0.5*(CornerPoint[0].y + CornerPoint[1].y));
-		mediumPoint[1] = cvPoint2D32f(0.5*(CornerPoint[1].x + CornerPoint[3].x), 0.5*(CornerPoint[1].y + CornerPoint[3].y));
-		mediumPoint[2] = cvPoint2D32f(0.5*(CornerPoint[3].x + CornerPoint[2].x), 0.5*(CornerPoint[3].y + CornerPoint[2].y));
-		mediumPoint[3] = cvPoint2D32f(0.5*(CornerPoint[2].x + CornerPoint[0].x), 0.5*(CornerPoint[2].y + CornerPoint[0].y));
-		float length[4];
-		length[0] = sqrt(pow((mainDlg.Center.x - mediumPoint[0].x), 2) + pow((mainDlg.Center.y - mediumPoint[0].y), 2));
-		length[1] = sqrt(pow((mainDlg.Center.x - mediumPoint[1].x), 2) + pow((mainDlg.Center.y - mediumPoint[1].y), 2));
-		length[2] = sqrt(pow((mainDlg.Center.x - mediumPoint[2].x), 2) + pow((mainDlg.Center.y - mediumPoint[2].y), 2));
-		length[3] = sqrt(pow((mainDlg.Center.x - mediumPoint[3].x), 2) + pow((mainDlg.Center.y - mediumPoint[3].y), 2));
-		const int radius1 = 35;
-		CvPoint2D32f outPoint1[4];
-		for (int i = 0; i < 4; i++)
-		{
-			float x = (mediumPoint[i].x - mainDlg.Center.x);
-			float y = (mediumPoint[i].y - mainDlg.Center.y);
-			outPoint1[i] = cvPoint2D32f((x / length[i] * radius1) + mainDlg.Center.x, (y / length[i] * radius1) + mainDlg.Center.y);
-		}
+		//排序四個點
+		CvPoint2D32f outPoint[4];
+		sequencePoint(&CornerPoint[0], mainDlg.Center, &outPoint[0]);
 
-		//2 3 對調 使 點 順時針照順序
-		CvPoint temp;
-		temp = CornerPoint[2];
-		CornerPoint[2] = CornerPoint[3];
-		CornerPoint[3] = temp;
-
-		//0 1 要是長邊
-		float distance1, distance2;
-		distance1 = pow((CornerPoint[1].x - CornerPoint[0].x), 2) + pow((CornerPoint[1].y - CornerPoint[0].y), 2);
-		distance2 = pow((CornerPoint[3].x - CornerPoint[0].x), 2) + pow((CornerPoint[3].y - CornerPoint[0].y), 2);
-		if (distance1 < distance2)
-		{
-			CvPoint temp;
-			temp = CornerPoint[1];
-			CornerPoint[1] = CornerPoint[2];
-			CornerPoint[2] = CornerPoint[3];
-			CornerPoint[3] = CornerPoint[0];
-			CornerPoint[0] = temp;
-
-			CvPoint2D32f tempOut;
-			tempOut = outPoint1[1];
-			outPoint1[1] = outPoint1[2];
-			outPoint1[2] = outPoint1[3];
-			outPoint1[3] = outPoint1[0];
-			outPoint1[0] = tempOut;
-		}
-
+		//畫出 角點
 		for (int i = 0; i < 4; i++)
 			cvCircle(imageCorner, CornerPoint[i], 3, CV_RGB(0, 255, 0), CV_FILLED);
-
-		//轉成順時針
-		int Array1[] = { CornerPoint[1].x - CornerPoint[0].x ,CornerPoint[1].y - CornerPoint[0].y };
-		int Array2[] = { CornerPoint[3].x - CornerPoint[0].x ,CornerPoint[3].y - CornerPoint[0].y };
-		int cross = Array1[0] * Array2[1] - Array1[1] * Array2[0];
-
-		if (cross < 0)
-		{
-			CvPoint temp;
-			temp = CornerPoint[0];
-			CornerPoint[0] = CornerPoint[1];
-			CornerPoint[1] = temp;
-
-			temp = CornerPoint[2];
-			CornerPoint[2] = CornerPoint[3];
-			CornerPoint[3] = temp;
-
-			CvPoint2D32f tempOut;
-			tempOut = outPoint1[1];
-			outPoint1[1] = outPoint1[3];
-			outPoint1[3] = tempOut;
-		}
 
 		//將外點 換成世界座標
 		CvPoint3D32f outPoint_World[4];
 		for (int i = 0; i < 4; i++)
-			Img2SCARA(outPoint1[i].x, outPoint1[i].y, &outPoint_World[i].x, &outPoint_World[i].y, &outPoint_World[i].z);
+			Img2SCARA(outPoint[i].x, outPoint[i].y, &outPoint_World[i].x, &outPoint_World[i].y, &outPoint_World[i].z);
+
+
+		//排除四個點，但是卻不是單一物體或特殊狀況------------------------
+		//5個點 轉成 世界座標
+		CvPoint3D32f ObjectPoint_World[5];
+		Img2SCARA(mainDlg.Center.x, mainDlg.Center.y, &ObjectPoint_World[0].x, &ObjectPoint_World[0].y, &ObjectPoint_World[0].z);
+		Img2SCARA(CornerPoint[0].x, CornerPoint[0].y, &ObjectPoint_World[1].x, &ObjectPoint_World[1].y, &ObjectPoint_World[1].z);
+		Img2SCARA(CornerPoint[1].x, CornerPoint[1].y, &ObjectPoint_World[2].x, &ObjectPoint_World[2].y, &ObjectPoint_World[2].z);
+		Img2SCARA(CornerPoint[2].x, CornerPoint[2].y, &ObjectPoint_World[3].x, &ObjectPoint_World[3].y, &ObjectPoint_World[3].z);
+		Img2SCARA(CornerPoint[3].x, CornerPoint[3].y, &ObjectPoint_World[4].x, &ObjectPoint_World[4].y, &ObjectPoint_World[4].z);
+
+		float distence_width[2];
+		float distence_length[2];
+		distence_width[0] = sqrt(pow((ObjectPoint_World[1].x - ObjectPoint_World[4].x), 2) + pow((ObjectPoint_World[1].y - ObjectPoint_World[4].y), 2));
+		distence_width[1] = sqrt(pow((ObjectPoint_World[2].x - ObjectPoint_World[3].x), 2) + pow((ObjectPoint_World[2].y - ObjectPoint_World[3].y), 2));
+		distence_length[0] = sqrt(pow((ObjectPoint_World[1].x - ObjectPoint_World[2].x), 2) + pow((ObjectPoint_World[1].y - ObjectPoint_World[2].y), 2));
+		distence_length[1] = sqrt(pow((ObjectPoint_World[3].x - ObjectPoint_World[4].x), 2) + pow((ObjectPoint_World[3].y - ObjectPoint_World[4].y), 2));
+		const int distence_error = 10;
+		if (distence_width[0] > 50 + distence_error || distence_width[0] < 50 - distence_error)//寬度不符合
+		{
+			//showimage	 
+			CvRect rect = { mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[0].y,mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y };
+			cvSetImageROI(imageCorner, rect);
+			ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
+			m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
+			return 0;
+		}
+		if (distence_width[1] > 50 + distence_error || distence_width[1] < 50 - distence_error)//寬度不符合
+		{
+			//showimage	 
+			CvRect rect = { mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[0].y,mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y };
+			cvSetImageROI(imageCorner, rect);
+			ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
+			m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
+			return 0;
+		}
+		if (distence_length[0] > 75 + distence_error || distence_length[0] < 75 - distence_error)//長度不符合
+		{
+			//showimage	 
+			CvRect rect = { mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[0].y,mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y };
+			cvSetImageROI(imageCorner, rect);
+			ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
+			m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
+			return 0;
+		}
+		if (distence_length[1] > 75 + distence_error || distence_length[1] < 75 - distence_error)//長度不符合
+		{
+			//showimage	 
+			CvRect rect = { mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[0].y,mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y };
+			cvSetImageROI(imageCorner, rect);
+			ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
+			m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
+			return 0;
+		}
+		//---------------------------------------------------------------------
+
 
 		//內縮角點
 		for (int i = 0; i < 4; i++)
@@ -357,17 +372,16 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 		}
 
 		//5個點 轉成 世界座標
-		CvPoint3D32f ObjectPoint_World[5];
 		Img2SCARA(mainDlg.Center.x, mainDlg.Center.y, &ObjectPoint_World[0].x, &ObjectPoint_World[0].y, &ObjectPoint_World[0].z);
 		Img2SCARA(CornerPoint[0].x, CornerPoint[0].y, &ObjectPoint_World[1].x, &ObjectPoint_World[1].y, &ObjectPoint_World[1].z);
 		Img2SCARA(CornerPoint[1].x, CornerPoint[1].y, &ObjectPoint_World[2].x, &ObjectPoint_World[2].y, &ObjectPoint_World[2].z);
 		Img2SCARA(CornerPoint[2].x, CornerPoint[2].y, &ObjectPoint_World[3].x, &ObjectPoint_World[3].y, &ObjectPoint_World[3].z);
 		Img2SCARA(CornerPoint[3].x, CornerPoint[3].y, &ObjectPoint_World[4].x, &ObjectPoint_World[4].y, &ObjectPoint_World[4].z);
-		//-----------------------------------------------------
 
-			//畫出外點
+
+		//畫出外點
 		for (int i = 0; i < 4; i++)
-			cvCircle(imageCorner, cvPoint(outPoint1[i].x, outPoint1[i].y), 2, CV_RGB(0, 0, 255), CV_FILLED);
+			cvCircle(imageCorner, cvPoint(outPoint[i].x, outPoint[i].y), 2, CV_RGB(0, 0, 255), CV_FILLED);
 		//畫出內縮角點
 		for (int i = 0; i < 4; i++)
 			cvCircle(imageCorner, CornerPoint[i], 1, CV_RGB(0, 255, 0), CV_FILLED);
@@ -375,10 +389,10 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 		cvCircle(imageCorner, mainDlg.Center, 3, CV_RGB(255, 0, 0), CV_FILLED);
 
 		//畫上座標
-		Text(imageCorner, "0", outPoint1[0].x, outPoint1[0].y);
-		Text(imageCorner, "1", outPoint1[1].x, outPoint1[1].y);
-		Text(imageCorner, "2", outPoint1[2].x, outPoint1[2].y);
-		Text(imageCorner, "3", outPoint1[3].x, outPoint1[3].y);
+		Text(imageCorner, "0", outPoint[0].x, outPoint[0].y);
+		Text(imageCorner, "1", outPoint[1].x, outPoint[1].y);
+		Text(imageCorner, "2", outPoint[2].x, outPoint[2].y);
+		Text(imageCorner, "3", outPoint[3].x, outPoint[3].y);
 
 		Text(imageCorner, "0", CornerPoint[0].x, CornerPoint[0].y);
 		Text(imageCorner, "1", CornerPoint[1].x, CornerPoint[1].y);
@@ -391,6 +405,7 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 		ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
 		m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
 
+		CString Pos;
 		Pos.Format(_T("%d,%d"), CornerPoint[0].x, CornerPoint[0].y);
 		GetDlgItem(IDC_EDIT1_pixel_corner1)->SetWindowTextW(Pos);
 		Pos.Format(_T("%d,%d"), CornerPoint[1].x, CornerPoint[1].y);
@@ -404,7 +419,6 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 
 		//判斷擺放case
 		int ObjCase = caseClassify(&ObjectPoint_World[0]);
-		//判斷推的問題
 
 		//判斷有幾個東西在四周
 		int blockCount = 0;
@@ -417,10 +431,6 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 		}
 
 
-		CvPoint3D32f pushPoint[2];
-		CvPoint3D32f grabPoint;
-		float deg;
-
 		switch (ObjCase)
 		{
 		case 1:  //平放
@@ -429,9 +439,11 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 			{
 			case 0://平面旁邊無東西
 			{
-				//夾取位置 
-				grabPoint = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, 18);
-				deg = getDegree(ObjectPoint_World[0], outPoint_World[0]);
+				//夾取 
+				pushPoint[0] = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, 18);
+				pushPoint[1] = pushPoint[0];
+				*degree = getDegree(ObjectPoint_World[0], outPoint_World[0]);
+				return 2;
 			}
 			break;
 			case 1://平面 旁邊一個block
@@ -439,15 +451,20 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 				if ((outPoint_World[1].z < BlockStep) && (outPoint_World[3].z < BlockStep))//block在長邊
 				{
 					//從短邊推
+					pushPoint[0] = extendPoint(ObjectPoint_World[0], outPoint_World[1], 100);//短邊外面
 					pushPoint[1] = ObjectPoint_World[0];//=中心
-					pushPoint[0] = outPoint_World[1];//短邊外面
-					deg = getDegree(pushPoint[0], pushPoint[1]);
+					pushPoint[0].z = 18;
+					pushPoint[1].z = 18;
+					*degree = getDegree(pushPoint[0], pushPoint[1]);
+					return 6;
 				}
 				else // block 在短邊
 				{
-					//直接夾
-					grabPoint = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, 18);
-					deg = getDegree(ObjectPoint_World[0], outPoint_World[0]);
+					//夾取
+					pushPoint[0] = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, 18);
+					pushPoint[1] = pushPoint[0];
+					*degree = getDegree(ObjectPoint_World[0], outPoint_World[0]);
+					return 4;
 				}
 			}
 			break;
@@ -456,7 +473,10 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 		break;
 		case 2:  //平放堆疊
 		{
-
+			pushPoint[0] = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, ObjectPoint_World[0].z);
+			pushPoint[1] = pushPoint[0];
+			*degree = getDegree(ObjectPoint_World[0], outPoint_World[0]);
+			return 1;
 		}
 		break;
 		case 3: //斜面
@@ -465,33 +485,47 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 			{
 			case 0:
 			{
-
+				//從高邊 往 center推
+				pushPoint[0] = extendPoint(ObjectPoint_World[0], outPoint_World[findHighestSide(ObjectPoint_World)], 100);
+				pushPoint[1] = ObjectPoint_World[0];
+				pushPoint[0].z = 36;
+				pushPoint[1].z = 36;
+				*degree = getDegree(pushPoint[0], pushPoint[1]);
+				return 8;
 			}
 			break;
 			case 1: //斜面 正常狀況
 			{
 				if ((outPoint_World[1].z > BlockStep) || (outPoint_World[3].z > BlockStep))//block在短邊
 				{
-					//夾取
-					grabPoint = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, 36);
-					deg = getDegree(ObjectPoint_World[0], outPoint_World[0]);
+					//夾取 2倍高
+					pushPoint[0] = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, 36);
+					pushPoint[1] = pushPoint[0];
+					*degree = getDegree(ObjectPoint_World[0], outPoint_World[0]);
+					return 5;
 				}
 				if ((outPoint_World[0].z > BlockStep) || (outPoint_World[2].z > BlockStep))//block在長邊
 				{
 					//找高邊
-					if (outPoint_World[4].z > outPoint_World[1].z)//表示 block在outPoint 2
+					if (ObjectPoint_World[4].z > ObjectPoint_World[1].z)//表示 block在outPoint 2
 					{
 						//從 outPoint 2 往 center 推
-						pushPoint[0] = outPoint_World[2];
+						pushPoint[0] = extendPoint(ObjectPoint_World[0], outPoint_World[2], 100);
 						pushPoint[1] = ObjectPoint_World[0];
-						deg = getDegree(pushPoint[0], pushPoint[1]);
+						pushPoint[0].z = 36;
+						pushPoint[1].z = 36;
+						*degree = getDegree(pushPoint[0], pushPoint[1]);
+						return 7;
 					}
-					else if (outPoint_World[4].z < outPoint_World[1].z)//表示 block在outPoint 0
+					else if (ObjectPoint_World[4].z < ObjectPoint_World[1].z)//表示 block在outPoint 0
 					{
 						//從 outPoint 0 往 center 推
-						pushPoint[0] = outPoint_World[0];
+						pushPoint[0] = extendPoint(ObjectPoint_World[0], outPoint_World[0], 100);
 						pushPoint[1] = ObjectPoint_World[0];
-						deg = getDegree(pushPoint[0], pushPoint[1]);
+						pushPoint[0].z = 36;
+						pushPoint[1].z = 36;
+						*degree = getDegree(pushPoint[0], pushPoint[1]);
+						return 7;
 					}
 				}
 			}
@@ -499,43 +533,226 @@ void tab2Dlg::OnCbnSelchangeComboobjlist()
 			case 2: //斜面 旁邊有一個障礙物
 			{
 				//從高邊 往 center推
-				pushPoint[0] = outPoint_World[findHighestSide(ObjectPoint_World)];
+				pushPoint[0] = extendPoint(ObjectPoint_World[0], outPoint_World[findHighestSide(ObjectPoint_World)], 100);
 				pushPoint[1] = ObjectPoint_World[0];
-				deg = getDegree(pushPoint[0], pushPoint[1]);
+				pushPoint[0].z = 36;
+				pushPoint[1].z = 36;
+				*degree = getDegree(pushPoint[0], pushPoint[1]);
+				return 8;
 			}
 			break;
 			case 3:
 			{
 				//從高邊 往 center推
-				pushPoint[0] = outPoint_World[findHighestSide(ObjectPoint_World)];
+				pushPoint[0] = extendPoint(ObjectPoint_World[0], outPoint_World[findHighestSide(ObjectPoint_World)], 100);
 				pushPoint[1] = ObjectPoint_World[0];
-				deg = getDegree(pushPoint[0], pushPoint[1]);
+				pushPoint[0].z = 36;
+				pushPoint[1].z = 36;
+				*degree = getDegree(pushPoint[0], pushPoint[1]);
+				return 8;
 			}
 			break;
 			case 4:
 			{
 				//從高邊 往 center推
-				pushPoint[0] = outPoint_World[findHighestSide(ObjectPoint_World)];
+				pushPoint[0] = extendPoint(ObjectPoint_World[0], outPoint_World[findHighestSide(ObjectPoint_World)], 100);
 				pushPoint[1] = ObjectPoint_World[0];
-				deg = getDegree(pushPoint[0], pushPoint[1]);
+				pushPoint[0].z = 36;
+				pushPoint[1].z = 36;
+				*degree = getDegree(pushPoint[0], pushPoint[1]);
+				return 8;
 			}
 			break;
 			}//switch (blockCount)
 		}
 		break;//斜面
 		}//switch ObjCase
+
 	}//if (cornerNum == 4)
 	else//若角點不是四個 則單純顯示圖片(不畫出角點)
 	{
+		//畫出 角點
+		for (int i = 0; i < cornerNum; i++)
+			cvCircle(imageCorner, CornerPoint[i], 2, CV_RGB(0, 255, 0), CV_FILLED);
+
+		//畫出中點
+		cvCircle(imageCorner, mainDlg.Center, 3, CV_RGB(255, 0, 0), CV_FILLED);
+
+		//5個點 轉成 世界座標
+		CvPoint3D32f ObjectPoint_World[10];
+		Img2SCARA(mainDlg.Center.x, mainDlg.Center.y, &ObjectPoint_World[0].x, &ObjectPoint_World[0].y, &ObjectPoint_World[0].z);
+		for (int i = 0; i < cornerNum; i++)
+		{
+			Img2SCARA(CornerPoint[i].x, CornerPoint[i].y, &ObjectPoint_World[i+1].x, &ObjectPoint_World[i+1].y, &ObjectPoint_World[i+1].z);
+		}
+
 		//showimage
 		CvRect rect = { mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[0].y,mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x,mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y };
 		cvSetImageROI(ImgApproxPolyLoad, rect);
 		ShowImage(ImgApproxPolyLoad, GetDlgItem(IDC_IMAGE_ApproxPoly), 1, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
 		m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
+		return 0;//沒優先權 不夾取
 	}
 
 	cvReleaseImage(&ImgApproxPolyLoad);
 	cvReleaseImage(&imageCorner);
+}
+
+void tab2Dlg::SpecilGrabDecision(int pictureSelcet, CvPoint3D32f * pushPoint, float * degree)
+{
+	char path[100];
+	sprintf(path, "ApproxPolyPics/inside%d.jpg", pictureSelcet);
+	IplImage* ImageLoad = cvLoadImage(path, 0);
+	IplImage* ImgApproxPolyLoad = cvCreateImage(cvGetSize(ImageLoad), ImageLoad->depth, 1);
+	cvCopy(ImageLoad, ImgApproxPolyLoad);
+	cvReleaseImage(&ImageLoad);
+
+	//找中心點
+	CMFC_SystemDlg mainDlg;
+	mainDlg.Center = GetCenter(ImgApproxPolyLoad);
+
+	//找角點 跟 角點個數  (CornerPoint 已經放入)
+	IplImage* imageCorner = cvCreateImage(cvGetSize(ImgApproxPolyLoad), ImgApproxPolyLoad->depth, 3);
+	int cornerNum;
+	CornerDetection(ImgApproxPolyLoad, imageCorner, &cornerNum);
+	cvCvtColor(ImgApproxPolyLoad, imageCorner, CV_GRAY2RGB);
+
+	//取得與中心最近點
+	CvPoint clostestPoint;
+
+
+	//將clostestPoint轉世界座標
+	CvPoint3D32f clostestPoint_World;
+	Img2SCARA(clostestPoint.x, clostestPoint.y, &clostestPoint_World.x, &clostestPoint_World.y, &clostestPoint_World.z);
+
+	//5個點 轉成 世界座標
+	CvPoint3D32f ObjectPoint_World[5];
+	Img2SCARA(mainDlg.Center.x, mainDlg.Center.y, &ObjectPoint_World[0].x, &ObjectPoint_World[0].y, &ObjectPoint_World[0].z);
+	Img2SCARA(CornerPoint[0].x, CornerPoint[0].y, &ObjectPoint_World[1].x, &ObjectPoint_World[1].y, &ObjectPoint_World[1].z);
+	Img2SCARA(CornerPoint[1].x, CornerPoint[1].y, &ObjectPoint_World[2].x, &ObjectPoint_World[2].y, &ObjectPoint_World[2].z);
+	Img2SCARA(CornerPoint[2].x, CornerPoint[2].y, &ObjectPoint_World[3].x, &ObjectPoint_World[3].y, &ObjectPoint_World[3].z);
+	Img2SCARA(CornerPoint[3].x, CornerPoint[3].y, &ObjectPoint_World[4].x, &ObjectPoint_World[4].y, &ObjectPoint_World[4].z);
+
+	//
+	pushPoint[0] = extendPoint(ObjectPoint_World[0], clostestPoint_World, 100);
+	pushPoint[1] = ObjectPoint_World[0];
+	pushPoint[0].z = 40;
+	pushPoint[1].z = 40;
+	*degree = getDegree(pushPoint[0], pushPoint[1]);
+
+
+}
+
+void tab2Dlg::sequencePoint(CvPoint * corner, CvPoint center, CvPoint2D32f * outside)
+{
+
+	//-----排序 CornerPoint x 小到大(左到右)--------------------
+	for (int n = 0; n < 3; n++)//做三次
+	{
+		for (int i = 0; i < 3; i++)//0跟1比......2跟3比
+		{
+			if (corner[i].x > corner[i + 1].x)
+			{
+				//交換
+				CvPoint temp;
+				temp = corner[i];
+				corner[i] = corner[i + 1];
+				corner[i + 1] = temp;
+			}
+		}
+	}
+	//-------------------------------------------------------
+
+
+	//特殊狀況 偵測到梯形---------
+	if (corner[0].y >corner[1].y && corner[3].y >corner[2].y)
+	{
+		CvPoint temp_23change;
+		temp_23change = corner[2];
+		corner[2] = corner[3];
+		corner[3] = temp_23change;
+	}
+	if (corner[1].y >corner[0].y && corner[2].y >corner[3].y)
+	{
+		CvPoint temp_23change;
+		temp_23change = corner[2];
+		corner[2] = corner[3];
+		corner[3] = temp_23change;
+	}
+	//---------------------------
+
+	//算出外圈的點 供推方塊使用
+	CvPoint2D32f mediumPoint[4];
+	mediumPoint[0] = cvPoint2D32f(0.5*(corner[0].x + corner[1].x), 0.5*(corner[0].y + corner[1].y));
+	mediumPoint[1] = cvPoint2D32f(0.5*(corner[1].x + corner[3].x), 0.5*(corner[1].y + corner[3].y));
+	mediumPoint[2] = cvPoint2D32f(0.5*(corner[3].x + corner[2].x), 0.5*(corner[3].y + corner[2].y));
+	mediumPoint[3] = cvPoint2D32f(0.5*(corner[2].x + corner[0].x), 0.5*(corner[2].y + corner[0].y));
+	float length[4];
+	length[0] = sqrt(pow((center.x - mediumPoint[0].x), 2) + pow((center.y - mediumPoint[0].y), 2));
+	length[1] = sqrt(pow((center.x - mediumPoint[1].x), 2) + pow((center.y - mediumPoint[1].y), 2));
+	length[2] = sqrt(pow((center.x - mediumPoint[2].x), 2) + pow((center.y - mediumPoint[2].y), 2));
+	length[3] = sqrt(pow((center.x - mediumPoint[3].x), 2) + pow((center.y - mediumPoint[3].y), 2));
+
+
+	const int radius1 = 35;
+	//CvPoint2D32f outPoint1[4];
+	for (int i = 0; i < 4; i++)
+	{
+		float x = (mediumPoint[i].x - center.x);
+		float y = (mediumPoint[i].y - center.y);
+		outside[i] = cvPoint2D32f((x / length[i] * radius1) + center.x, (y / length[i] * radius1) + center.y);
+	}
+
+	//2 3 對調 使 點 順時針照順序
+	CvPoint temp;
+	temp = corner[2];
+	corner[2] = corner[3];
+	corner[3] = temp;
+
+	//0 1 要是長邊
+	float distance1, distance2;
+	distance1 = pow((corner[1].x - corner[0].x), 2) + pow((corner[1].y - corner[0].y), 2);
+	distance2 = pow((corner[3].x - corner[0].x), 2) + pow((corner[3].y - corner[0].y), 2);
+	if (distance1 < distance2)
+	{
+		CvPoint temp;
+		temp = corner[1];
+		corner[1] = corner[2];
+		corner[2] = corner[3];
+		corner[3] = corner[0];
+		corner[0] = temp;
+
+		CvPoint2D32f tempOut;
+		tempOut = outside[1];
+		outside[1] = outside[2];
+		outside[2] = outside[3];
+		outside[3] = outside[0];
+		outside[0] = tempOut;
+	}
+
+
+
+	//轉成順時針
+	int Array1[] = { corner[1].x - corner[0].x ,corner[1].y - corner[0].y };
+	int Array2[] = { corner[3].x - corner[0].x ,corner[3].y - corner[0].y };
+	int cross = Array1[0] * Array2[1] - Array1[1] * Array2[0];
+
+	if (cross < 0)
+	{
+		CvPoint temp;
+		temp = corner[0];
+		corner[0] = corner[1];
+		corner[1] = temp;
+
+		temp = corner[2];
+		corner[2] = corner[3];
+		corner[3] = temp;
+
+		CvPoint2D32f tempOut;
+		tempOut = outside[1];
+		outside[1] = outside[3];
+		outside[3] = tempOut;
+	}
 }
 
 void tab2Dlg::CornerDetection(IplImage* edge_roi, IplImage *CornerImg_Modified, int* cornerCount)
@@ -550,7 +767,7 @@ void tab2Dlg::CornerDetection(IplImage* edge_roi, IplImage *CornerImg_Modified, 
 
 	cvSetZero(CornerImg_Modified);
 	cvSetZero(dst);
-	cvCornerHarris(src, dst, 5, 5);
+	cvCornerHarris(src, dst, 5, 7);//@harris
 	cvConvertScale(dst, dst_8U, 255,0);
 	cvThreshold(dst_8U, dst_8U, 1, 255, CV_THRESH_BINARY);
 
@@ -576,7 +793,7 @@ void tab2Dlg::HarrisCornerToPoint(IplImage* Cornerimage, IplImage *dst, int* cor
 		cvSetZero(Sec);
 		cvDrawContours(Sec, contours, CV_RGB(255, 255, 255), CV_RGB(0, 0, 0), -1, CV_FILLED, 8, cvPoint(0, 0));
 
-		CvPoint corner = GetCentroid(Sec);
+		CvPoint corner = GetCenter(Sec);
 		cvCircle(dst, corner, 0, CV_RGB(255, 255, 255), CV_FILLED);
 		CornerPoint[CornerCounter] = corner;
 		CornerCounter++;
@@ -589,7 +806,7 @@ void tab2Dlg::HarrisCornerToPoint(IplImage* Cornerimage, IplImage *dst, int* cor
 	cvReleaseImage(&First);
 }
 
-CvPoint tab2Dlg::GetCentroid(IplImage *src)
+CvPoint tab2Dlg::GetCenter(IplImage *src)
 {
 	CvPoint corner;
 	int x0 = 0, y0 = 0, sum = 0;
@@ -621,10 +838,6 @@ void tab2Dlg::Img2SCARA(int x, int y, float *SCARAX, float *SCARAY, float *SCARA
 	*SCARAY = mainDlg.CamRefX - (mainDlg.kinect.CameraX * 1000) - 410;
 
 	*SCARAZ = (mainDlg.DepthPointsBase[x][y] - mainDlg.kinect.CameraZ * 1000);
-
-	//*SCARAZ = 183-(mainDlg.DepthPointsBase[x][y] - mainDlg.kinect.CameraZ * 1000);
-	//上面才是SCARA座標
-
 }
 int tab2Dlg::FindElement(float fitemp)
 {
@@ -656,11 +869,11 @@ int tab2Dlg::caseClassify(CvPoint3D32f* objPoint)
 float tab2Dlg::getDegree(CvPoint3D32f first, CvPoint3D32f second)
 {
 	float x = second.x - first.x;
-	float y = first.y - second.y;
-	float m = x / -y;
+	float y = second.y - first.y;
+	float m = y / x;
 	float degree;
 
-	degree = -atan(m);
+	degree = atan(m);
 
 	return degree*180/ 3.1415926535897932384626433832;
 }
@@ -687,4 +900,205 @@ int tab2Dlg::findHighestSide(CvPoint3D32f * objPoint)
 		else if (objPoint[2].z > objPoint[1].z)
 			return 1;//outpoint 1 是高邊
 	}
+}
+
+CvPoint3D32f tab2Dlg::extendPoint(CvPoint3D32f first, CvPoint3D32f second, int value)
+{
+	float length;
+	length = sqrt(pow((first.x - second.x), 2) + pow((first.y - second.y), 2));
+
+	CvPoint3D32f extendPoint;
+	float x = (second.x - first.x);
+	float y = (second.y - first.y);
+	extendPoint = cvPoint3D32f((x / length * value) + first.x, (y / length * value) + first.y , 18);
+
+	return extendPoint;
+}
+
+void tab2Dlg::OnBnClickedButtonstartgrab()
+{
+
+	if (priority != 0)
+	{
+		CMFC_SystemDlg mainDlg;
+		//mainDlg.packetCreat_toPoint(550, 0, 50, 90);
+
+		//@傳輸TO SCARA
+		//1.pushPoint[0] 的 x y
+		mainDlg.packetCreat_toPoint(m_pushPoint[0].x, m_pushPoint[0].y, 100, m_degree);
+		//3.pushPoint[0] 的 z
+		mainDlg.packetCreat_toPoint(m_pushPoint[0].x, m_pushPoint[0].y, m_pushPoint[0].z, m_degree);
+		//4.pushPoint[1]
+		mainDlg.packetCreat_toPoint(m_pushPoint[1].x, m_pushPoint[1].y, m_pushPoint[1].z, m_degree);
+	}
+}
+
+void tab2Dlg::OnBnClickedButtonautobinpick()
+{
+	//1. 偵測多邊形
+	ObjectCounter = 0;
+	m_combo_objList.ResetContent();
+	m_list_detectNum.ResetContent();
+	m_list_priority.ResetContent();
+	SetDlgItemText(IDC_EDIT1_pixel_corner1, _T("0"));
+	SetDlgItemText(IDC_EDIT1_pixel_corner2, _T("0"));
+	SetDlgItemText(IDC_EDIT1_pixel_corner3, _T("0"));
+	SetDlgItemText(IDC_EDIT1_pixel_corner4, _T("0"));
+	SetDlgItemText(IDC_EDIT1_pixel_cornerCenter, _T("0"));
+
+	system("del .\\ApproxPolyPics\\*.jpg");
+	CMFC_SystemDlg mainDlg;
+	IplImage*  img_CannyRoi = cvCreateImage(cvGetSize(mainDlg.sImg_CannyRoiS), IPL_DEPTH_8U, 1);
+	cvCopy(mainDlg.sImg_CannyRoiS, img_CannyRoi);
+	//影像處理 閉合破碎
+	IplConvKernel *pKernel = NULL;
+	pKernel = cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_RECT, NULL);
+	cvDilate(img_CannyRoi, img_CannyRoi, cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_RECT, NULL), 1);
+	cvErode(img_CannyRoi, img_CannyRoi, pKernel, 1);
+
+	ApproxPoly(img_CannyRoi);
+
+	//2. 所有多邊形全部選擇一次
+	int number = m_list_detectNum.GetCount();
+	for (int i = number - 1; i >= 0; i--)
+	{
+		priority = grabDecision(i, &m_pushPoint[0], &m_degree);
+		CString priority_str;
+		priority_str.Format(_T("%d"), priority);
+		m_list_priority.InsertString(0, priority_str);
+		UpdateData(0);
+	}
+
+	//3. 將優先權最高的做夾取
+
+
+
+
+	//4. 重複 2 3 直到 優先權皆為0
+
+	//5. (case4 的處理)
+}
+
+
+
+
+//找最大優先權 並 顯示
+void tab2Dlg::OnBnClickedButtontoppriority()
+{
+	CString listPriorityMax_str;
+	m_list_priority.GetText(0, listPriorityMax_str);
+	int listPriorityMax = _ttoi(listPriorityMax_str);
+	CString listPriority_str;
+	//找最大的優先 不包含0(不夾取的優先值)
+	int maxNum = 0;
+
+	for (int i = 0; i < m_list_detectNum.GetCount(); i++)
+	{
+		m_list_priority.GetText(i, listPriority_str);
+		int listPriority = _ttoi(listPriority_str);
+		if (listPriority != 0 && listPriority < listPriorityMax)
+		{
+			listPriorityMax = listPriority;
+			maxNum = i;
+		}
+	}
+	if (listPriorityMax != 0) //若有可以一般處理的東西 先處理
+	{
+		//將標示放在最大優先的地方
+		m_list_priority.SetCurSel(maxNum);
+		m_list_detectNum.SetCurSel(maxNum);
+
+
+		priority = grabDecision(maxNum, &m_pushPoint[0], &m_degree);
+		m_priorityShow = priority;
+		UpdateData(0);
+
+
+		//顯示pushPoint值
+		CString Pos;
+		//1.pushPoint[0] 的 x y
+		Pos.Format(_T("%f"), m_pushPoint[0].x);
+		SetDlgItemText(IDC_EDIT_Wx_Pos1, Pos);
+		Pos.Format(_T("%f"), m_pushPoint[0].y);
+		SetDlgItemText(IDC_EDIT_Wy_Pos1, Pos);
+		Pos.Format(_T("%f"), 100);
+		SetDlgItemText(IDC_EDIT_Wz_Pos1, Pos);
+		Pos.Format(_T("%f"), m_degree);
+		SetDlgItemText(IDC_EDIT_Wt_Pos1, Pos);
+		//2.pushPoint[0] 的 z
+		Pos.Format(_T("%f"), m_pushPoint[0].x);
+		SetDlgItemText(IDC_EDIT_Wx_Pos2, Pos);
+		Pos.Format(_T("%f"), m_pushPoint[0].y);
+		SetDlgItemText(IDC_EDIT_Wy_Pos2, Pos);
+		Pos.Format(_T("%f"), m_pushPoint[0].z);
+		SetDlgItemText(IDC_EDIT_Wz_Pos2, Pos);
+		Pos.Format(_T("%f"), m_degree);
+		SetDlgItemText(IDC_EDIT_Wt_Pos2, Pos);
+		//3.pushPoint[1]
+		Pos.Format(_T("%f"), m_pushPoint[1].x);
+		SetDlgItemText(IDC_EDIT_Wx_Pos3, Pos);
+		Pos.Format(_T("%f"), m_pushPoint[1].y);
+		SetDlgItemText(IDC_EDIT_Wy_Pos3, Pos);
+		Pos.Format(_T("%f"), m_pushPoint[1].z);
+		SetDlgItemText(IDC_EDIT_Wz_Pos3, Pos);
+		Pos.Format(_T("%f"), m_degree);
+		SetDlgItemText(IDC_EDIT_Wt_Pos3, Pos);
+	}
+	else if (listPriorityMax == 0) //(case4 or case5
+	{
+		//將標示放在最大優先的地方
+		m_list_priority.SetCurSel(maxNum);
+		m_list_detectNum.SetCurSel(maxNum);
+
+
+		SpecilGrabDecision(maxNum, &m_pushPoint[0], &m_degree);
+
+		//顯示pushPoint值
+		CString Pos;
+		//1.pushPoint[0] 的 x y
+		Pos.Format(_T("%f"), m_pushPoint[0].x);
+		SetDlgItemText(IDC_EDIT_Wx_Pos1, Pos);
+		Pos.Format(_T("%f"), m_pushPoint[0].y);
+		SetDlgItemText(IDC_EDIT_Wy_Pos1, Pos);
+		Pos.Format(_T("%f"), 100);
+		SetDlgItemText(IDC_EDIT_Wz_Pos1, Pos);
+		Pos.Format(_T("%f"), m_degree);
+		SetDlgItemText(IDC_EDIT_Wt_Pos1, Pos);
+		//2.pushPoint[0] 的 z
+		Pos.Format(_T("%f"), m_pushPoint[0].x);
+		SetDlgItemText(IDC_EDIT_Wx_Pos2, Pos);
+		Pos.Format(_T("%f"), m_pushPoint[0].y);
+		SetDlgItemText(IDC_EDIT_Wy_Pos2, Pos);
+		Pos.Format(_T("%f"), m_pushPoint[0].z);
+		SetDlgItemText(IDC_EDIT_Wz_Pos2, Pos);
+		Pos.Format(_T("%f"), m_degree);
+		SetDlgItemText(IDC_EDIT_Wt_Pos2, Pos);
+		//3.pushPoint[1]
+		Pos.Format(_T("%f"), m_pushPoint[1].x);
+		SetDlgItemText(IDC_EDIT_Wx_Pos3, Pos);
+		Pos.Format(_T("%f"), m_pushPoint[1].y);
+		SetDlgItemText(IDC_EDIT_Wy_Pos3, Pos);
+		Pos.Format(_T("%f"), m_pushPoint[1].z);
+		SetDlgItemText(IDC_EDIT_Wz_Pos3, Pos);
+		Pos.Format(_T("%f"), m_degree);
+		SetDlgItemText(IDC_EDIT_Wt_Pos3, Pos);
+	}
+	
+}
+
+
+void tab2Dlg::OnBnClickedButtongopushpoint1()
+{
+	CMFC_SystemDlg mainDlg;
+	mainDlg.packetCreat_toPoint(m_pushPoint[0].x, m_pushPoint[0].y, 100, m_degree);
+}
+void tab2Dlg::OnBnClickedButtongopushpoint2()
+{
+	CMFC_SystemDlg mainDlg;
+	mainDlg.packetCreat_toPoint(m_pushPoint[0].x, m_pushPoint[0].y, m_pushPoint[0].z, m_degree);
+}
+void tab2Dlg::OnBnClickedButtongopushpoint3()
+{
+	CMFC_SystemDlg mainDlg;
+	mainDlg.packetCreat_toPoint(m_pushPoint[1].x, m_pushPoint[1].y, m_pushPoint[1].z, m_degree);
 }

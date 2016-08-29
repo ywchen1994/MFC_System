@@ -61,7 +61,7 @@ public:
 	static IplImage* img_DepthS;
 	static float DepthPointsBase[512][424];
 	static IplImage* img_CannyS;
-	static IplImage* img_CannyRoiS;
+	static IplImage* sImg_CannyRoiS;
 	static CvPoint RoiPoint[2];
 	/**********************************/
 	CStatic m_Img_RGBLive;
@@ -82,9 +82,11 @@ public:
 	static CvPoint Center;
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	
-	afx_msg void OnBnClickedButtonupdate();
+	
 
-	void packetCreat_toPoint(float x, float y, float z, float t, char * report);
+	void packetCreat_toPoint(float x, float y, float z, float t);
+
+
 	
 	void SetPos(float x);
 	float m_Xpos;
@@ -99,6 +101,11 @@ public:
 
 	static const int objectdata[3];
 	CIPAddressCtrl m_SCARAIP;
+	static CString ip_SCARA;
 	CButton m_ImgLockerMDLG;
 
+	afx_msg void OnBnClickedButtonHome();
+	afx_msg void OnBnClickedButtonRef();
+	void grab();
+	afx_msg void OnBnClickedButtongrab();
 };

@@ -97,22 +97,35 @@ void tab1Dlg::Thread_Image_Canny(LPVOID lParam)
 	tab1Dlg * hWnd = (tab1Dlg *)CWnd::FromHandle((HWND)Thread_Info->hWnd);
 	IplImage* img_Canny_C3;
 	IplImage* img_CannyRoi_C1;
+	IplImage* img_CannyRoi_C1_mean;
 	CMFC_SystemDlg mainDlg;
 	while (1)
 	{
 		img_Canny_C3 = cvCreateImage(cvSize(512,424), IPL_DEPTH_8U, 3);
 		img_CannyRoi_C1 = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
+		img_CannyRoi_C1_mean = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
+
 		cvCvtColor(mainDlg.img_CannyS, img_Canny_C3, CV_GRAY2BGR);
 
 		cvCopy(mainDlg.img_CannyS, img_CannyRoi_C1);
+		
+		
+		for (int i = 0;i<5;i++)
+		{
+			cvOr(mainDlg.img_CannyS, img_CannyRoi_C1, img_CannyRoi_C1);
+			Sleep(100);
+		}
+
 		hWnd->SetRoI(img_CannyRoi_C1);
-		cvCopy(img_CannyRoi_C1, mainDlg.img_CannyRoiS);
+		cvCopy(img_CannyRoi_C1, mainDlg.sImg_CannyRoiS);
+
 
 		cvRectangle(img_Canny_C3, mainDlg.RoiPoint[0], mainDlg.RoiPoint[1],CV_RGB(255,0,0));
 
 		hWnd->ShowImage(img_Canny_C3, hWnd->GetDlgItem(IDC_IMAGE_Canny), 3);
 		cvReleaseImage(&img_Canny_C3);
 		cvReleaseImage(&img_CannyRoi_C1);
+		cvReleaseImage(&img_CannyRoi_C1_mean);
 	}
 
 }
@@ -215,8 +228,8 @@ CvPoint GetCenterPoint(IplImage *src)
 void tab1Dlg::OnBnClickedButtonSetreferencepoint()
 {
 	CMFC_SystemDlg mainDlg;
-	IplImage* img_CannyRoi = cvCreateImage(cvGetSize(mainDlg.img_CannyRoiS), mainDlg.img_CannyRoiS->depth,1);
-	cvCopy(mainDlg.img_CannyRoiS, img_CannyRoi);
+	IplImage* img_CannyRoi = cvCreateImage(cvGetSize(mainDlg.sImg_CannyRoiS), mainDlg.sImg_CannyRoiS->depth,1);
+	cvCopy(mainDlg.sImg_CannyRoiS, img_CannyRoi);
 	CvPoint RefPointPixel= GetCenterPoint(img_CannyRoi);
 	
 	mainDlg.kinect.Depth2CameraSpace(RefPointPixel.x, RefPointPixel.y);
