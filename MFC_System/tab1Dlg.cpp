@@ -235,7 +235,7 @@ void tab1Dlg::OnBnClickedButtonSetreferencepoint()
 	mainDlg.kinect.Depth2CameraSpace(RefPointPixel.x, RefPointPixel.y);
 	mainDlg.CamRefX =mainDlg.kinect.CameraX * 1000;
 	mainDlg.CamRefY= mainDlg.kinect.CameraY * 1000;
-
+		
 	CString str;
 	str.Format(_T("( %.2f  ,  %.2f  ,  %.2f )"), mainDlg.CamRefX, mainDlg.CamRefY, mainDlg.CamRefZ);
 	GetDlgItem(IDC_EDIT_SetreferencePoint)->SetWindowText(str);

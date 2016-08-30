@@ -85,3 +85,22 @@ void tab3Dlg::OnBnClickedButtonBack()
 {
 	// TODO: 在此加入控制項告知處理常式程式碼
 }
+
+UINT tab3Dlg::MythreadFun(LPVOID LParam)
+{
+	CTab2threadParam* para = (CTab2threadParam*)LParam;
+	tab2Dlg* lpview = (tab2Dlg*)(para->m_lpPara);
+	para->m_blthreading = TRUE;
+
+	switch (para->m_case)
+	{
+	case 0:
+		lpview->Thread_Image_CannyRoi(LParam);
+	default:
+		break;
+	}
+
+	para->m_blthreading = FALSE;
+	para->m_case = 0xFF;
+	return 0;
+}

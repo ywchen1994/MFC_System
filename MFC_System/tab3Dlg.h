@@ -1,6 +1,13 @@
 #pragma once
 
-
+struct CTab3threadParam
+{
+public:
+	HWND hWnd;
+	LPVOID m_lpPara;
+	UINT   m_case;
+	BOOL m_blthreading;
+};
 
 // tab3Dlg ¹ï¸Ü¤è¶ô
 
@@ -25,4 +32,11 @@ public:
 	afx_msg void OnBnClickedButtonrobotfrount();
 	afx_msg void OnBnClickedButtonconnect();
 	afx_msg void OnBnClickedButtonBack();
+
+
+	//thread
+	CTab2threadParam m_threadPara;
+	CWinThread*  m_lpThread;
+	static UINT MythreadFun(LPVOID LParam);
+	void Thread_Image_CannyRoi(LPVOID lParam);
 };

@@ -333,7 +333,7 @@ int tab2Dlg::grabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* deg
 			cvSetImageROI(imageCorner, rect);
 			ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
 			m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
-			return 0;
+			return 10;
 		}
 		if (distence_width[1] > 50 + distence_error || distence_width[1] < 50 - distence_error)//寬度不符合
 		{
@@ -342,7 +342,7 @@ int tab2Dlg::grabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* deg
 			cvSetImageROI(imageCorner, rect);
 			ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
 			m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
-			return 0;
+			return 10;
 		}
 		if (distence_length[0] > 75 + distence_error || distence_length[0] < 75 - distence_error)//長度不符合
 		{
@@ -351,7 +351,7 @@ int tab2Dlg::grabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* deg
 			cvSetImageROI(imageCorner, rect);
 			ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
 			m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
-			return 0;
+			return 10;
 		}
 		if (distence_length[1] > 75 + distence_error || distence_length[1] < 75 - distence_error)//長度不符合
 		{
@@ -360,7 +360,7 @@ int tab2Dlg::grabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* deg
 			cvSetImageROI(imageCorner, rect);
 			ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
 			m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
-			return 0;
+			return 10;
 		}
 		//---------------------------------------------------------------------
 
@@ -500,7 +500,7 @@ int tab2Dlg::grabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* deg
 				if ((outPoint_World[1].z > BlockStep) || (outPoint_World[3].z > BlockStep))//block在短邊
 				{
 					//夾取 2倍高
-					pushPoint[0] = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, 36);
+					pushPoint[0] = cvPoint3D32f(ObjectPoint_World[0].x, ObjectPoint_World[0].y, 30);
 					pushPoint[1] = pushPoint[0];
 					*degree = getDegree(ObjectPoint_World[0], outPoint_World[0]);
 					return 5;
@@ -592,7 +592,7 @@ int tab2Dlg::grabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* deg
 		cvSetImageROI(ImgApproxPolyLoad, rect);
 		ShowImage(ImgApproxPolyLoad, GetDlgItem(IDC_IMAGE_ApproxPoly), 1, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
 		m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
-		return 0;//沒優先權 不夾取
+		return 10;//沒優先權 不夾取
 	}
 
 	cvReleaseImage(&ImgApproxPolyLoad);
@@ -957,20 +957,23 @@ CvPoint3D32f tab2Dlg::extendPoint(CvPoint3D32f first, CvPoint3D32f second, int v
 
 void tab2Dlg::OnBnClickedButtonstartgrab()
 {
-
-	if (priority != 0)
-	{
 		CMFC_SystemDlg mainDlg;
 		//mainDlg.packetCreat_toPoint(550, 0, 50, 90);
 
 		//@傳輸TO SCARA
 		//1.pushPoint[0] 的 x y
 		mainDlg.packetCreat_toPoint(m_pushPoint[0].x, m_pushPoint[0].y, 100, m_degree);
-		//3.pushPoint[0] 的 z
+		//2.pushPoint[0] 的 z
 		mainDlg.packetCreat_toPoint(m_pushPoint[0].x, m_pushPoint[0].y, m_pushPoint[0].z, m_degree);
-		//4.pushPoint[1]
+		//3.pushPoint[1]
 		mainDlg.packetCreat_toPoint(m_pushPoint[1].x, m_pushPoint[1].y, m_pushPoint[1].z, m_degree);
-	}
+		//4. 夾
+		mainDlg.grab();
+		//5.Z起來
+		mainDlg.packetCreat_toPoint(m_pushPoint[1].x, m_pushPoint[1].y, 100, m_degree);
+		//6.to home or 辨識後的位置
+		mainDlg.packetCreat_toPoint(550, 0, 133, 0);
+
 }
 
 void tab2Dlg::OnBnClickedButtonautobinpick()
@@ -1027,29 +1030,29 @@ void tab2Dlg::OnBnClickedButtontoppriority()
 {
 	CString listPriorityMax_str;
 	m_list_priority.GetText(0, listPriorityMax_str);
-	int listPriorityMax = _ttoi(listPriorityMax_str);
+	int listPriorityMin = _ttoi(listPriorityMax_str);
 	CString listPriority_str;
 	//找最大的優先 不包含0(不夾取的優先值)
-	int maxNum = 0;
+	int numMin = 0;
 
 	for (int i = 0; i < m_list_detectNum.GetCount(); i++)
 	{
 		m_list_priority.GetText(i, listPriority_str);
 		int listPriority = _ttoi(listPriority_str);
-		if (listPriority != 0 && listPriority < listPriorityMax)
+		if (listPriority < listPriorityMin)
 		{
-			listPriorityMax = listPriority;
-			maxNum = i;
+			listPriorityMin = listPriority;
+			numMin = i;
 		}
 	}
-	if (listPriorityMax != 0) //若有可以一般處理的東西 先處理
+	if (listPriorityMin != 10) //若有可以一般處理的東西 先處理
 	{
 		//將標示放在最大優先的地方
-		m_list_priority.SetCurSel(maxNum);
-		m_list_detectNum.SetCurSel(maxNum);
+		m_list_priority.SetCurSel(numMin);
+		m_list_detectNum.SetCurSel(numMin);
 
 
-		priority = grabDecision(maxNum, &m_pushPoint[0], &m_degree);
+		priority = grabDecision(numMin, &m_pushPoint[0], &m_degree);
 		m_priorityShow = priority;
 		UpdateData(0);
 
@@ -1061,7 +1064,7 @@ void tab2Dlg::OnBnClickedButtontoppriority()
 		SetDlgItemText(IDC_EDIT_Wx_Pos1, Pos);
 		Pos.Format(_T("%f"), m_pushPoint[0].y);
 		SetDlgItemText(IDC_EDIT_Wy_Pos1, Pos);
-		Pos.Format(_T("%f"), 100);
+		Pos.Format(_T("%f"), 100.00);
 		SetDlgItemText(IDC_EDIT_Wz_Pos1, Pos);
 		Pos.Format(_T("%f"), m_degree);
 		SetDlgItemText(IDC_EDIT_Wt_Pos1, Pos);
@@ -1084,14 +1087,14 @@ void tab2Dlg::OnBnClickedButtontoppriority()
 		Pos.Format(_T("%f"), m_degree);
 		SetDlgItemText(IDC_EDIT_Wt_Pos3, Pos);
 	}
-	else if (listPriorityMax == 0) //(case4 or case5
+	else if (listPriorityMin == 10) //(case4 or case5
 	{
 		//將標示放在最大優先的地方
-		m_list_priority.SetCurSel(maxNum);
-		m_list_detectNum.SetCurSel(maxNum);
+		m_list_priority.SetCurSel(numMin);
+		m_list_detectNum.SetCurSel(numMin);
 
 
-		SpecilGrabDecision(maxNum, &m_pushPoint[0], &m_degree);
+		SpecilGrabDecision(numMin, &m_pushPoint[0], &m_degree);
 
 		//顯示pushPoint值
 		CString Pos;

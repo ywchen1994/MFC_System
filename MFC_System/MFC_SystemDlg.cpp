@@ -383,20 +383,11 @@ void CMFC_SystemDlg::OnBnClickedButtongrab()
 
 void CMFC_SystemDlg::OnBnClickedButtonDownref()
 {
-	grab();
+	
 	float tarX = 280;
 	float tarY = -410;
-	float tarZ = 33;
+	float tarZ = 43;
 	float tarTheta = 0;
-	packetCreat_toPoint(tarX, tarY, tarZ, tarTheta);
-	Sleep(5000);
-	grab();
-
-	tarX = 550;
-	tarY = 0;
-	tarZ = 133;
-	tarTheta = 0;
-
 	packetCreat_toPoint(tarX, tarY, tarZ, tarTheta);
 
 }
