@@ -108,4 +108,5 @@ public:
 	afx_msg void OnBnClickedButtonRef();
 	void grab();
 	afx_msg void OnBnClickedButtongrab();
+	afx_msg void OnBnClickedButtonDownref();
 };

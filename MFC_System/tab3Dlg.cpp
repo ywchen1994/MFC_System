@@ -38,6 +38,7 @@ void tab3Dlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(tab3Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_robotFrount, &tab3Dlg::OnBnClickedButtonrobotfrount)
 	ON_BN_CLICKED(IDC_BUTTON_connect, &tab3Dlg::OnBnClickedButtonconnect)
+	ON_BN_CLICKED(IDC_BUTTON_Back, &tab3Dlg::OnBnClickedButtonBack)
 END_MESSAGE_MAP()
 
 
@@ -55,28 +56,32 @@ void tab3Dlg::OnBnClickedButtonconnect()
 {
 	Aria::init();
 	robot.lock();
-	
-	serial.setBaud(9600);
-	serial.setPort("COM5");
-	//con.setPort("192.168.0.100", 8266);
+	con.setPort("192.168.0.201", 8101);
 
-	if (!serial.openSimple())
+	if (!con.openSimple())
 	{
-		MessageBox(L"Open failed.");
+		printf("Open failed.");
+		Aria::shutdown();
+	}
+	robot.setDeviceConnection(&con);
+	if (!robot.blockingConnect())
+	{
+		printf("Could not connect to robot... exiting\n");
 		Aria::shutdown();
 	}
 
-	robot.setDeviceConnection(&serial);
-	if (!robot.blockingConnect())
-	{
-		MessageBox(L"Could not connect to robot... exiting\n");
-		//Aria::shutdown();
-	}
 
 	robot.enableMotors();
+	//	robot.comInt(ArCommands::ENABLE, 1);
 	robot.disableSonar();		                 // Disables the sonar.
 	robot.requestEncoderPackets();// Starts a continuous stream of encoder packets.
 
 	robot.runAsync(true);
 	robot.unlock();
+}
+
+
+void tab3Dlg::OnBnClickedButtonBack()
+{
+	// TODO: 在此加入控制項告知處理常式程式碼
 }

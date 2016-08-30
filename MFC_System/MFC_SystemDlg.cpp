@@ -65,6 +65,7 @@ BEGIN_MESSAGE_MAP(CMFC_SystemDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_Home, &CMFC_SystemDlg::OnBnClickedButtonHome)
 	ON_BN_CLICKED(IDC_BUTTON_Ref, &CMFC_SystemDlg::OnBnClickedButtonRef)
 	ON_BN_CLICKED(IDC_BUTTON_grab, &CMFC_SystemDlg::OnBnClickedButtongrab)
+	ON_BN_CLICKED(IDC_BUTTON_DownRef, &CMFC_SystemDlg::OnBnClickedButtonDownref)
 END_MESSAGE_MAP()
 
 
@@ -334,7 +335,7 @@ void CMFC_SystemDlg::OnBnClickedButtonHome()
 {
 	UpdateData(false);
 	m_SCARAIP.GetWindowTextW(ip_SCARA);
-	//§¨¤ö§¨¨ú ¼g³o¸Ì
+
 
 	float tarX = 550;
 	float tarY = 0;
@@ -377,4 +378,25 @@ void CMFC_SystemDlg::grab()
 void CMFC_SystemDlg::OnBnClickedButtongrab()
 {
 	grab();
+}
+
+
+void CMFC_SystemDlg::OnBnClickedButtonDownref()
+{
+	grab();
+	float tarX = 280;
+	float tarY = -410;
+	float tarZ = 33;
+	float tarTheta = 0;
+	packetCreat_toPoint(tarX, tarY, tarZ, tarTheta);
+	Sleep(5000);
+	grab();
+
+	tarX = 550;
+	tarY = 0;
+	tarZ = 133;
+	tarTheta = 0;
+
+	packetCreat_toPoint(tarX, tarY, tarZ, tarTheta);
+
 }

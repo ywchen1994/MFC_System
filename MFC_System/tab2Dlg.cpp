@@ -228,6 +228,7 @@ void tab2Dlg::findinside(IplImage *Img)
 		m_combo_objList.SetCurSel(ObjectCounter);
 		//m_list_detectNum.SetCurSel(ObjectCounter);
 		/**************************************************/
+		
 		cvSaveImage(SaveImgPath, mask);
 		ObjectCounter++;
 
@@ -605,6 +606,7 @@ void tab2Dlg::SpecilGrabDecision(int pictureSelcet, CvPoint3D32f * pushPoint, fl
 	IplImage* ImageLoad = cvLoadImage(path, 0);
 	IplImage* ImgApproxPolyLoad = cvCreateImage(cvGetSize(ImageLoad), ImageLoad->depth, 1);
 	cvCopy(ImageLoad, ImgApproxPolyLoad);
+	cvThreshold(ImgApproxPolyLoad, ImgApproxPolyLoad, 100, 255, CV_THRESH_BINARY);
 	cvReleaseImage(&ImageLoad);
 
 	//找中心點
@@ -619,10 +621,11 @@ void tab2Dlg::SpecilGrabDecision(int pictureSelcet, CvPoint3D32f * pushPoint, fl
 
 	//取得與中心最近點
 	CvPoint clostestPoint;
-
+	clostestPoint = GetClosestPoint(ImgApproxPolyLoad, mainDlg.Center);
 
 	//將clostestPoint轉世界座標
 	CvPoint3D32f clostestPoint_World;
+
 	Img2SCARA(clostestPoint.x, clostestPoint.y, &clostestPoint_World.x, &clostestPoint_World.y, &clostestPoint_World.z);
 
 	//5個點 轉成 世界座標
@@ -634,13 +637,50 @@ void tab2Dlg::SpecilGrabDecision(int pictureSelcet, CvPoint3D32f * pushPoint, fl
 	Img2SCARA(CornerPoint[3].x, CornerPoint[3].y, &ObjectPoint_World[4].x, &ObjectPoint_World[4].y, &ObjectPoint_World[4].z);
 
 	//
-	pushPoint[0] = extendPoint(ObjectPoint_World[0], clostestPoint_World, 100);
+	pushPoint[0] = extendPoint(ObjectPoint_World[0], clostestPoint_World, 150);
 	pushPoint[1] = ObjectPoint_World[0];
-	pushPoint[0].z = 40;
-	pushPoint[1].z = 40;
+	if (ObjectPoint_World[0].z < 18)
+	{
+		pushPoint[0].z = 18;
+		pushPoint[1].z = 18;
+	}
+	else if (ObjectPoint_World[0].z > 80)
+	{
+		pushPoint[0].z = 80;
+		pushPoint[1].z = 80;
+	}
+	else
+	{
+		pushPoint[0].z = ObjectPoint_World[0].z;
+		pushPoint[1].z = ObjectPoint_World[0].z;
+	}
+
 	*degree = getDegree(pushPoint[0], pushPoint[1]);
+}
 
+CvPoint tab2Dlg::GetClosestPoint(IplImage * src, CvPoint center)
+{
+	CvPoint ClosestP = cvPoint(0, 0);
+	long double length = 441920;
+	long double lengthTemp;
+	CvScalar pixel;
+	for (int i = 0; i < src->width; i++) {
+		for (int j = 0; j < src->height; j++) {
+			pixel = cvGet2D(src, j, i);
+			if (pixel.val[0] > 0) {
+				lengthTemp = pow(i - center.x, 2) + pow(j - center.y, 2);
+				if (length>lengthTemp) {
+					length = lengthTemp;
+					if (length == lengthTemp) {
+						ClosestP.x = i;
+						ClosestP.y = j;
+					}
+				}
+			}
+		}
+	}
 
+	return ClosestP;
 }
 
 void tab2Dlg::sequencePoint(CvPoint * corner, CvPoint center, CvPoint2D32f * outside)
@@ -1060,7 +1100,7 @@ void tab2Dlg::OnBnClickedButtontoppriority()
 		SetDlgItemText(IDC_EDIT_Wx_Pos1, Pos);
 		Pos.Format(_T("%f"), m_pushPoint[0].y);
 		SetDlgItemText(IDC_EDIT_Wy_Pos1, Pos);
-		Pos.Format(_T("%f"), 100);
+		Pos.Format(_T("%f"), 100.00);
 		SetDlgItemText(IDC_EDIT_Wz_Pos1, Pos);
 		Pos.Format(_T("%f"), m_degree);
 		SetDlgItemText(IDC_EDIT_Wt_Pos1, Pos);

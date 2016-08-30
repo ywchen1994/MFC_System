@@ -24,4 +24,5 @@ protected:
 public:
 	afx_msg void OnBnClickedButtonrobotfrount();
 	afx_msg void OnBnClickedButtonconnect();
+	afx_msg void OnBnClickedButtonBack();
 };
