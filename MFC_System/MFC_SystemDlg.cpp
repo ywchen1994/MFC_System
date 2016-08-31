@@ -250,7 +250,7 @@ void CMFC_SystemDlg::Thread_Image_Depth(LPVOID lParam)
 		if (img_DepthS != NULL)
 		{
 			hWnd->ShowImage(img_DepthS, hWnd->GetDlgItem(IDC_IMAGE_DepthLive), 1);
-			cvCanny(img_DepthS, img_CannyS,8,20);//@canny value
+			cvCanny(img_DepthS, img_CannyS,7,15);//@canny value
 
 			cvReleaseImage(&img_DepthS);
 		}
@@ -334,7 +334,11 @@ void CMFC_SystemDlg::packetCreat_toPoint(float x, float y, float z, float t)
 	CSocket client_socket;
 
 	char resp[32];
-
+	if (sqrt(pow(x,2)+ pow(y, 2))>550)
+	{
+		MessageBox(_T("Length error"));
+		return;
+	}
 	int temp;
 
 	int X_1 = x*0.01;
@@ -399,7 +403,7 @@ void CMFC_SystemDlg::OnBnClickedButtonHome()
 
 
 	float tarX = 550;
-	float tarY = 0;
+	float tarY =1000;
 	float tarZ =133;
 	float tarTheta = 0;
 
@@ -408,7 +412,7 @@ void CMFC_SystemDlg::OnBnClickedButtonHome()
 
 void CMFC_SystemDlg::OnBnClickedButtonRef()
 {
-	
+	m_SCARAIP.GetWindowTextW(ip_SCARA);
 	float tarX = 280;
 	float tarY = -410;
 	float tarZ = 133;

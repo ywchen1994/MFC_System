@@ -49,9 +49,11 @@ public:
 	static bool FLAG_open;
 	static int Xpos;
 	static int Ypos;
+	static int Ypos_Stop;
 
 	CListBox m_listBox_msg;
 	afx_msg void OnBnClickedButtonstart();
 	afx_msg void OnBnClickedButtonstop();
 	afx_msg void OnBnClickedButtongorobot();
+	afx_msg void OnBnClickedButtonsety();
 };

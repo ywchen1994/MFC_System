@@ -229,7 +229,14 @@ void tab1Dlg::OnBnClickedButtonSetreferencepoint()
 {
 	CMFC_SystemDlg mainDlg;
 	IplImage* img_CannyRoi = cvCreateImage(cvGetSize(mainDlg.sImg_CannyRoiS), mainDlg.sImg_CannyRoiS->depth,1);
-	cvCopy(mainDlg.sImg_CannyRoiS, img_CannyRoi);
+	cvSetZero(img_CannyRoi);
+	for (int i = 0; i<5; i++)
+	{
+		//cvCopy(mainDlg.sImg_CannyRoiS, img_CannyRoi);
+		cvOr(mainDlg.sImg_CannyRoiS, img_CannyRoi, img_CannyRoi);
+		Sleep(600);
+	}
+
 	CvPoint RefPointPixel= GetCenterPoint(img_CannyRoi);
 	
 	mainDlg.kinect.Depth2CameraSpace(RefPointPixel.x, RefPointPixel.y);

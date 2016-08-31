@@ -998,7 +998,7 @@ void tab2Dlg::OnBnClickedButtonstartgrab()
 			mainDlg.packetCreat_toPoint(441, 165, 18, 0);
 
 			//©ñ
-			Sleep(3000);
+			Sleep(4000);
 			mainDlg.grab();
 			Sleep(500);
 			
@@ -1030,7 +1030,7 @@ void tab2Dlg::OnBnClickedButtonstartgrab()
 			mainDlg.packetCreat_toPoint(366, 165, 18, 0);
 
 			//©ñ±¼
-			Sleep(3000);
+			Sleep(4000);
 			mainDlg.grab();
 			Sleep(500);
 			//up
@@ -1059,7 +1059,7 @@ void tab2Dlg::OnBnClickedButtonstartgrab()
 			mainDlg.packetCreat_toPoint(291, 165, 18, 0);
 
 			//©ñ±¼
-			Sleep(3000);
+			Sleep(4000);
 			mainDlg.grab();
 			Sleep(500);
 			//up

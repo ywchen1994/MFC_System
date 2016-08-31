@@ -21,6 +21,7 @@ ArTime start;
 bool tab3Dlg::FLAG_open = true;
 int tab3Dlg::Xpos = 0;
 int tab3Dlg::Ypos = 0;
+int tab3Dlg::Ypos_Stop = 512;
 // tab3Dlg ¹ï¸Ü¤è¶ô
 IMPLEMENT_DYNAMIC(tab3Dlg, CDialogEx)
 
@@ -49,6 +50,7 @@ BEGIN_MESSAGE_MAP(tab3Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_start, &tab3Dlg::OnBnClickedButtonstart)
 	ON_BN_CLICKED(IDC_BUTTON_stop, &tab3Dlg::OnBnClickedButtonstop)
 	ON_BN_CLICKED(IDC_BUTTON_goRobot, &tab3Dlg::OnBnClickedButtongorobot)
+	ON_BN_CLICKED(IDC_BUTTON_setY, &tab3Dlg::OnBnClickedButtonsety)
 END_MESSAGE_MAP()
 
 
@@ -223,11 +225,11 @@ void tab3Dlg::Thread_goRobot(LPVOID lParam)
 	robot.setVel(30);
 	while (1)
 	{
-		if (Ypos >= 450 && Ypos < 512)
+		if (Ypos >= 430 && Ypos < Ypos_Stop)
 		{
 			robot.setVel(10);
 		}
-		else if (Ypos >= 512)
+		else if (Ypos >= Ypos_Stop)
 		{
 			robot.stop();
 			FLAG_open = false;
@@ -257,4 +259,10 @@ void tab3Dlg::OnBnClickedButtongorobot()
 	m_threadPara.m_case = 1;
 	m_threadPara.hWnd = m_hWnd;
 	m_lpThread = AfxBeginThread(&tab3Dlg::MythreadFun, (LPVOID)&m_threadPara);
+}
+
+
+void tab3Dlg::OnBnClickedButtonsety()
+{
+	Ypos_Stop = Ypos;
 }
