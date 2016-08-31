@@ -108,6 +108,10 @@ BOOL CMFC_SystemDlg::OnInitDialog()
 	m_Img_RGBLive.SetWindowPos(NULL, 10, 10, 320, 240, SWP_SHOWWINDOW);
 	m_Img_DepthLive.SetWindowPos(NULL, 10 + 320, 10, 320, 240, SWP_SHOWWINDOW);
 	m_SCARAIP.SetWindowText(_T("192.168.1.3"));
+
+	m_threadPara.m_case = 2;
+	m_threadPara.hWnd = m_hWnd;
+	m_lpThread = AfxBeginThread(&CMFC_SystemDlg::MythreadFun, (LPVOID)&m_threadPara);
 	return TRUE;  // 傳回 TRUE，除非您對控制項設定焦點
 }
 
@@ -165,6 +169,7 @@ void CMFC_SystemDlg::OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult)
 	}
 	*pResult = 0;
 }
+
 int LBottomClicktimes = 0;
 void CMFC_SystemDlg::OnLButtonDown(UINT nFlags, CPoint point)
 {
@@ -197,7 +202,6 @@ UINT CMFC_SystemDlg::MythreadFun(LPVOID LParam)
 	{
 	case 0:
 		lpview->Thread_Image_RGB(LParam);
-
 	case 1:
 		lpview->Thread_Image_Depth(LParam);
 	case 2:
@@ -253,6 +257,53 @@ void CMFC_SystemDlg::Thread_Image_Depth(LPVOID lParam)
 	}
 }
 
+void CMFC_SystemDlg::Thread_Image_RGBDetection(LPVOID lParam)
+{
+	CMythreadParam * Thread_Info = (CMythreadParam *)lParam;
+	CMFC_SystemDlg * hWnd = (CMFC_SystemDlg *)CWnd::FromHandle((HWND)Thread_Info->hWnd);
+	CvScalar RGBColor;
+	IplImage* img_Rgb_hsv = nullptr;
+	while (1)
+	{
+		img_Rgb_hsv = cvCreateImage(cvSize(1920, 1080), IPL_DEPTH_8U, 3);
+		cvCvtColor(img_RgbSetS, img_Rgb_hsv, CV_BGR2HSV);
+		RGBColor = cvGet2D(img_Rgb_hsv, RGBRefPoint.y, RGBRefPoint.x);
+
+		if (RGBColor.val[0] > 150 && RGBColor.val[0] < 180 && RGBColor.val[2] >100)//red
+		{
+			workSpace1Color = 1;
+			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Red"));
+		}
+		else if (RGBColor.val[0] > 80 && RGBColor.val[0] < 100 && RGBColor.val[2] >100)//green
+		{
+			workSpace1Color = 2;
+			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Green"));
+		}
+		else if (RGBColor.val[0] > 100 && RGBColor.val[0] < 120 && RGBColor.val[2] >100)//blue
+		{
+			workSpace1Color = 3;
+			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Blue"));
+		}
+		else if (RGBColor.val[0] > 0 && RGBColor.val[0] < 20 && RGBColor.val[2] >100)//brown
+		{
+			workSpace1Color = 4;
+			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Brown"));
+		}
+		else
+		{
+			workSpace1Color = 0;
+			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("None"));
+		}
+		cvReleaseImage(&img_Rgb_hsv);
+	}
+}
+
+void CMFC_SystemDlg::Thread_OpenSetRGB()
+{
+	CSet  pSetRGBDlg(this);
+	pSetRGBDlg.DoModal();
+}
+
 void CMFC_SystemDlg::OnRButtonDown(UINT nFlags, CPoint point)
 {
 	if (!m_ImgLockerMDLG.GetCheck()) {
@@ -261,7 +312,7 @@ void CMFC_SystemDlg::OnRButtonDown(UINT nFlags, CPoint point)
 			for (int i = 0; i < 512; i++)
 				for (int j = 0; j < 424; j++)
 					DepthPointsBase[i][j] = kinect.pDepthPoints[i + 512 * j];//單位是mm
-			MessageBox(_T("Set Depth Done"));
+			m_ImgLockerMDLG.SetCheck(BST_CHECKED);
 		}
 		if (point.x >10 && point.x < (10 + 320 ) && point.y > 10 && point.y < (10 + 240))
 		{
@@ -276,7 +327,6 @@ void CMFC_SystemDlg::SetPos(float x)
 {
 	m_Xpos = x;
 }
-
 
 void CMFC_SystemDlg::packetCreat_toPoint(float x, float y, float z, float t)
 {
@@ -356,7 +406,6 @@ void CMFC_SystemDlg::OnBnClickedButtonHome()
 	packetCreat_toPoint(tarX, tarY, tarZ, tarTheta);
 }
 
-
 void CMFC_SystemDlg::OnBnClickedButtonRef()
 {
 	
@@ -391,7 +440,6 @@ void CMFC_SystemDlg::OnBnClickedButtongrab()
 	grab();
 }
 
-
 void CMFC_SystemDlg::OnBnClickedButtonDownref()
 {
 	float tarX = 280;
@@ -399,12 +447,6 @@ void CMFC_SystemDlg::OnBnClickedButtonDownref()
 	float tarZ = 43;
 	float tarTheta = 0;
 	packetCreat_toPoint(tarX, tarY, tarZ, tarTheta);
-
-}
-void CMFC_SystemDlg::Thread_OpenSetRGB()
-{
-	CSet  pSetRGBDlg(this);
-	pSetRGBDlg.DoModal();
 }
 
 void CMFC_SystemDlg::OnBnClickedButton3()
@@ -412,57 +454,13 @@ void CMFC_SystemDlg::OnBnClickedButton3()
 
 }
 
-
 void CMFC_SystemDlg::OnMButtonDown(UINT nFlags, CPoint point)
 {
 	
-
 	CDialogEx::OnMButtonDown(nFlags, point);
-}
-void CMFC_SystemDlg::Thread_Image_RGBDetection(LPVOID lParam)
-{
-	CMythreadParam * Thread_Info = (CMythreadParam *) lParam;
-	CMFC_SystemDlg * hWnd = (CMFC_SystemDlg *)CWnd::FromHandle((HWND)Thread_Info->hWnd);
-	CvScalar RGBColor;
-	IplImage* img_Rgb_hsv = nullptr;
-	while (1)
-	{
-		img_Rgb_hsv = cvCreateImage(cvSize(1920, 1080), IPL_DEPTH_8U, 3);
-		cvCvtColor(img_RgbSetS, img_Rgb_hsv, CV_BGR2HSV);
-		RGBColor=cvGet2D(img_Rgb_hsv, RGBRefPoint.y, RGBRefPoint.x);
-
-		if (RGBColor.val[0] > 150 && RGBColor.val[0] < 180 && RGBColor.val[2] >100)//red
-		{
-			workSpace1Color = 1;
-			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Red"));
-		}
-		else if (RGBColor.val[0] > 80 && RGBColor.val[0] < 100 && RGBColor.val[2] >100)//green
-		{
-			workSpace1Color = 2;
-			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Green"));
-		}
-		else if (RGBColor.val[0] > 100 && RGBColor.val[0] < 120 && RGBColor.val[2] >100)//blue
-		{
-			workSpace1Color = 3;
-			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Blue"));
-		}
-		else if (RGBColor.val[0] > 0 && RGBColor.val[0] < 20 && RGBColor.val[2] >100)//brown
-		{
-			workSpace1Color = 4;
-			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Brown"));
-		}
-		else
-		{
-			workSpace1Color = 0;
-			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("None"));
-		}
-		cvReleaseImage(&img_Rgb_hsv);
-	}
 }
 
 void CMFC_SystemDlg::OnBnClickedButtonRgbStart()
 {
-	m_threadPara.m_case = 2;
-	m_threadPara.hWnd = m_hWnd;
-	m_lpThread = AfxBeginThread(&CMFC_SystemDlg::MythreadFun, (LPVOID)&m_threadPara);
+	int a = 0;
 }

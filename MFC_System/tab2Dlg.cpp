@@ -17,7 +17,6 @@ IMPLEMENT_DYNAMIC(tab2Dlg, CDialogEx)
 
 tab2Dlg::tab2Dlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_DIALOG_tab2, pParent)
-	, m_priorityShow(0)
 {
 
 }
@@ -31,8 +30,6 @@ void tab2Dlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_IMAGE_CannyRoi, m_img_CannyRoi);
 	DDX_Control(pDX, IDC_IMAGE_ApproxPoly, m_img_approxPoly);
-	DDX_Control(pDX, IDC_COMBO_objList, m_combo_objList);
-	DDX_Text(pDX, IDC_EDIT1, m_priorityShow);
 	DDX_Control(pDX, IDC_LIST_detectNum, m_list_detectNum);
 	DDX_Control(pDX, IDC_LIST_priority, m_list_priority);
 }
@@ -40,7 +37,6 @@ void tab2Dlg::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(tab2Dlg, CDialogEx)
 	ON_WM_LBUTTONDOWN()
-	ON_CBN_SELCHANGE(IDC_COMBO_objList, &tab2Dlg::OnCbnSelchangeComboobjlist)
 	ON_BN_CLICKED(IDC_BUTTON_startGrab, &tab2Dlg::OnBnClickedButtonstartgrab)
 	ON_BN_CLICKED(IDC_BUTTON_autoBinPick, &tab2Dlg::OnBnClickedButtonautobinpick)
 	ON_LBN_SELCHANGE(IDC_LIST_detectNum, &tab2Dlg::OnLbnSelchangeListdetectnum)
@@ -48,6 +44,7 @@ BEGIN_MESSAGE_MAP(tab2Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_goPushPoint1, &tab2Dlg::OnBnClickedButtongopushpoint1)
 	ON_BN_CLICKED(IDC_BUTTON_goPushPoint2, &tab2Dlg::OnBnClickedButtongopushpoint2)
 	ON_BN_CLICKED(IDC_BUTTON_goPushPoint3, &tab2Dlg::OnBnClickedButtongopushpoint3)
+	ON_BN_CLICKED(IDC_BUTTON_debugMode, &tab2Dlg::OnBnClickedButtondebugmode)
 END_MESSAGE_MAP()
 
 
@@ -135,14 +132,8 @@ void tab2Dlg::OnLButtonDown(UINT nFlags, CPoint point)
 	if (point.x > (10) && point.x < (10 + 400) && point.y > 10+400 && point.y < (10 + 400+400))
 	{
 		ObjectCounter = 0;
-		m_combo_objList.ResetContent();
 		m_list_detectNum.ResetContent();
 		m_list_priority.ResetContent();
-		SetDlgItemText(IDC_EDIT1_pixel_corner1, _T("0"));
-		SetDlgItemText(IDC_EDIT1_pixel_corner2, _T("0"));
-		SetDlgItemText(IDC_EDIT1_pixel_corner3, _T("0"));
-		SetDlgItemText(IDC_EDIT1_pixel_corner4, _T("0"));
-		SetDlgItemText(IDC_EDIT1_pixel_cornerCenter, _T("0"));
 
 		system("del .\\ApproxPolyPics\\*.jpg");
 		CMFC_SystemDlg mainDlg;
@@ -223,10 +214,8 @@ void tab2Dlg::findinside(IplImage *Img)
 		/****************新增至combobox*******************/
 		CString objNum;
 		objNum.Format(_T("%d"), ObjectCounter);
-		m_combo_objList.InsertString(ObjectCounter, objNum);
 		m_list_detectNum.InsertString(ObjectCounter, objNum);
-		m_combo_objList.SetCurSel(ObjectCounter);
-		//m_list_detectNum.SetCurSel(ObjectCounter);
+
 		/**************************************************/
 		
 		cvSaveImage(SaveImgPath, mask);
@@ -248,22 +237,11 @@ void Text(IplImage* img, const char* text, int x, int y)
 	cvPutText(img, text, textPos, &font, textColor);
 }
 
-void tab2Dlg::OnCbnSelchangeComboobjlist()
-{
-	int select = m_combo_objList.GetCurSel();
-	priority = grabDecision(select, &m_pushPoint[0], &m_degree);
-	m_priorityShow = priority;
-	UpdateData(0);
-	return;
-}
-
 void tab2Dlg::OnLbnSelchangeListdetectnum()
 {
 	int select = m_list_detectNum.GetCurSel();
 	priority = grabDecision(select, &m_pushPoint[0], &m_degree);
 	m_list_priority.SetCurSel(select);
-	m_priorityShow = priority;
-	UpdateData(0);
 	return;
 }
 
@@ -406,17 +384,17 @@ int tab2Dlg::grabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* deg
 		ShowImage(imageCorner, GetDlgItem(IDC_IMAGE_ApproxPoly), 3, cvSize(2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y)));
 		m_img_approxPoly.SetWindowPos(NULL, 10, 10 + 400, 2 * (mainDlg.RoiPoint[1].x - mainDlg.RoiPoint[0].x), 2 * (mainDlg.RoiPoint[1].y - mainDlg.RoiPoint[0].y), SWP_SHOWWINDOW);
 
-		CString Pos;
-		Pos.Format(_T("%d,%d"), CornerPoint[0].x, CornerPoint[0].y);
-		GetDlgItem(IDC_EDIT1_pixel_corner1)->SetWindowTextW(Pos);
-		Pos.Format(_T("%d,%d"), CornerPoint[1].x, CornerPoint[1].y);
-		GetDlgItem(IDC_EDIT1_pixel_corner2)->SetWindowTextW(Pos);
-		Pos.Format(_T("%d,%d"), CornerPoint[2].x, CornerPoint[2].y);
-		GetDlgItem(IDC_EDIT1_pixel_corner3)->SetWindowTextW(Pos);
-		Pos.Format(_T("%d,%d"), CornerPoint[3].x, CornerPoint[3].y);
-		GetDlgItem(IDC_EDIT1_pixel_corner4)->SetWindowTextW(Pos);
-		Pos.Format(_T("%d,%d"), mainDlg.Center.x, mainDlg.Center.y);
-		GetDlgItem(IDC_EDIT1_pixel_cornerCenter)->SetWindowTextW(Pos);
+		//CString Pos;
+		//Pos.Format(_T("%d,%d"), CornerPoint[0].x, CornerPoint[0].y);
+		//GetDlgItem(IDC_EDIT1_pixel_corner1)->SetWindowTextW(Pos);
+		//Pos.Format(_T("%d,%d"), CornerPoint[1].x, CornerPoint[1].y);
+		//GetDlgItem(IDC_EDIT1_pixel_corner2)->SetWindowTextW(Pos);
+		//Pos.Format(_T("%d,%d"), CornerPoint[2].x, CornerPoint[2].y);
+		//GetDlgItem(IDC_EDIT1_pixel_corner3)->SetWindowTextW(Pos);
+		//Pos.Format(_T("%d,%d"), CornerPoint[3].x, CornerPoint[3].y);
+		//GetDlgItem(IDC_EDIT1_pixel_corner4)->SetWindowTextW(Pos);
+		//Pos.Format(_T("%d,%d"), mainDlg.Center.x, mainDlg.Center.y);
+		//GetDlgItem(IDC_EDIT1_pixel_cornerCenter)->SetWindowTextW(Pos);
 
 		//判斷擺放case
 		int ObjCase = caseClassify(&ObjectPoint_World[0]);
@@ -637,7 +615,7 @@ void tab2Dlg::SpecilGrabDecision(int pictureSelcet, CvPoint3D32f * pushPoint, fl
 	Img2SCARA(CornerPoint[2].x, CornerPoint[2].y, &ObjectPoint_World[3].x, &ObjectPoint_World[3].y, &ObjectPoint_World[3].z);
 	Img2SCARA(CornerPoint[3].x, CornerPoint[3].y, &ObjectPoint_World[4].x, &ObjectPoint_World[4].y, &ObjectPoint_World[4].z);
 
-	//
+	
 	pushPoint[0] = extendPoint(ObjectPoint_World[0], clostestPoint_World, 150);
 	pushPoint[1] = ObjectPoint_World[0];
 	if (ObjectPoint_World[0].z < 18)
@@ -974,7 +952,7 @@ void tab2Dlg::OnBnClickedButtonstartgrab()
 
 			if (priority < 6)//表示不是用推的 有東西要夾
 			{
-				Sleep(6000);
+				Sleep(5000);
 				mainDlg.grab();
 				Sleep(500);
 			}
@@ -1056,7 +1034,7 @@ void tab2Dlg::OnBnClickedButtonstartgrab()
 			mainDlg.grab();
 			Sleep(500);
 			//up
-			mainDlg.packetCreat_toPoint(336, 165, 136, 0);
+			mainDlg.packetCreat_toPoint(366, 165, 136, 0);
 			
 			//回家
 			mainDlg.packetCreat_toPoint(550, 0, 136, 0);
@@ -1070,7 +1048,7 @@ void tab2Dlg::OnBnClickedButtonstartgrab()
 			//down
 			mainDlg.packetCreat_toPoint(400, -180, 3, -90);
 			//grab
-			Sleep(3500);
+			Sleep(4500);
 			mainDlg.grab();
 			Sleep(500);
 			// up
@@ -1128,14 +1106,13 @@ void tab2Dlg::OnBnClickedButtonautobinpick()
 {
 	//1. 偵測多邊形
 	ObjectCounter = 0;
-	m_combo_objList.ResetContent();
 	m_list_detectNum.ResetContent();
 	m_list_priority.ResetContent();
-	SetDlgItemText(IDC_EDIT1_pixel_corner1, _T("0"));
-	SetDlgItemText(IDC_EDIT1_pixel_corner2, _T("0"));
-	SetDlgItemText(IDC_EDIT1_pixel_corner3, _T("0"));
-	SetDlgItemText(IDC_EDIT1_pixel_corner4, _T("0"));
-	SetDlgItemText(IDC_EDIT1_pixel_cornerCenter, _T("0"));
+	//SetDlgItemText(IDC_EDIT1_pixel_corner1, _T("0"));
+	//SetDlgItemText(IDC_EDIT1_pixel_corner2, _T("0"));
+	//SetDlgItemText(IDC_EDIT1_pixel_corner3, _T("0"));
+	//SetDlgItemText(IDC_EDIT1_pixel_corner4, _T("0"));
+	//SetDlgItemText(IDC_EDIT1_pixel_cornerCenter, _T("0"));
 
 	system("del .\\ApproxPolyPics\\*.jpg");
 	CMFC_SystemDlg mainDlg;
@@ -1161,13 +1138,12 @@ void tab2Dlg::OnBnClickedButtonautobinpick()
 	}
 
 	//3. 將優先權最高的做夾取
-
-
-
-
+	SendMessage(WM_COMMAND, IDC_BUTTON_topPriority, 0);
+	
 	//4. 重複 2 3 直到 優先權皆為0
 
 	//5. (case4 的處理)
+
 }
 
 
@@ -1181,7 +1157,13 @@ void tab2Dlg::OnBnClickedButtontoppriority()
 	//找最大的優先 不包含0(不夾取的優先值)
 	int numMin = 0;
 
-	for (int i = 0; i < m_list_detectNum.GetCount(); i++)
+	int count = m_list_detectNum.GetCount();
+	if (count == 0)
+	{
+		MessageBox(L"沒有偵測到貨品");
+		return;
+	}
+	for (int i = 0; i < count; i++)
 	{
 		m_list_priority.GetText(i, listPriority_str);
 		int listPriority = _ttoi(listPriority_str);
@@ -1199,8 +1181,6 @@ void tab2Dlg::OnBnClickedButtontoppriority()
 
 
 		priority = grabDecision(numMin, &m_pushPoint[0], &m_degree);
-		m_priorityShow = priority;
-		UpdateData(0);
 
 
 		//顯示pushPoint值
@@ -1290,4 +1270,26 @@ void tab2Dlg::OnBnClickedButtongopushpoint3()
 {
 	CMFC_SystemDlg mainDlg;
 	mainDlg.packetCreat_toPoint(m_pushPoint[1].x, m_pushPoint[1].y, m_pushPoint[1].z, m_degree);
+}
+
+bool debugMode = true;
+void tab2Dlg::OnBnClickedButtondebugmode()
+{
+	if (debugMode == true)
+	{
+	GetDlgItem(IDC_BUTTON_topPriority)->ShowWindow(SW_HIDE);
+	GetDlgItem(IDC_BUTTON_goPushPoint1)->ShowWindow(SW_HIDE);
+	GetDlgItem(IDC_BUTTON_goPushPoint2)->ShowWindow(SW_HIDE);
+	GetDlgItem(IDC_BUTTON_goPushPoint3)->ShowWindow(SW_HIDE);
+	debugMode = false;
+	}
+	else if(debugMode == false)
+	{
+		GetDlgItem(IDC_BUTTON_topPriority)->ShowWindow(SW_SHOW);
+		GetDlgItem(IDC_BUTTON_goPushPoint1)->ShowWindow(SW_SHOW);
+		GetDlgItem(IDC_BUTTON_goPushPoint2)->ShowWindow(SW_SHOW);
+		GetDlgItem(IDC_BUTTON_goPushPoint3)->ShowWindow(SW_SHOW);
+		debugMode = true;
+	}
+
 }

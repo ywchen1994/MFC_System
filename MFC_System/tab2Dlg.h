@@ -53,8 +53,6 @@ public:
 
 	void ApproxPoly(IplImage * img_roi);
 	void findinside(IplImage * Img);
-	CComboBox m_combo_objList;
-	afx_msg void OnCbnSelchangeComboobjlist();
 	int grabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* degree);
 	void SpecilGrabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* degree);
 
@@ -101,4 +99,5 @@ public:
 	afx_msg void OnBnClickedButtongopushpoint1();
 	afx_msg void OnBnClickedButtongopushpoint2();
 	afx_msg void OnBnClickedButtongopushpoint3();
+	afx_msg void OnBnClickedButtondebugmode();
 };
