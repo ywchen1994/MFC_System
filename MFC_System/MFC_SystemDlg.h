@@ -8,6 +8,8 @@
 #include "tab1Dlg.h"
 #include "tab2Dlg.h"
 #include "tab3Dlg.h"
+
+#include "set.h"
 #include "CvvImage.h"
 #include"cv.h"
 #include"highgui.h"
@@ -58,6 +60,7 @@ public:
 	CWinThread*  m_lpThread;
 	/***************static******************/
 	static IplImage* img_RgbS;
+	static IplImage* img_RgbSetS;
 	static IplImage* img_DepthS;
 	static float DepthPointsBase[512][424];
 	static IplImage* img_CannyS;
@@ -82,12 +85,8 @@ public:
 	static CvPoint Center;
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	
-	
-
 	void packetCreat_toPoint(float x, float y, float z, float t);
 
-
-	
 	void SetPos(float x);
 	float m_Xpos;
 	float m_Ypos;
@@ -109,4 +108,13 @@ public:
 	void grab();
 	afx_msg void OnBnClickedButtongrab();
 	afx_msg void OnBnClickedButtonDownref();
+	void Thread_OpenSetRGB();
+
+	static CvPoint RGBRefPoint;
+	static int workSpace1Color;
+
+	afx_msg void OnBnClickedButton3();
+	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
+	void Thread_Image_RGBDetection(LPVOID LParam);
+	afx_msg void OnBnClickedButtonRgbStart();
 };

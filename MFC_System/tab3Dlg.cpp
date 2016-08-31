@@ -9,6 +9,8 @@
 #include"MFC_SystemDlg.h"
 class CMFC_SystemDlg;
 
+using namespace zbar;
+
 
 //P3DX
 ArTcpConnection con;

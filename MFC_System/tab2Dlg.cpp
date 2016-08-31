@@ -597,6 +597,7 @@ int tab2Dlg::grabDecision(int pictureSelcet, CvPoint3D32f* pushPoint, float* deg
 
 	cvReleaseImage(&ImgApproxPolyLoad);
 	cvReleaseImage(&imageCorner);
+	return 99;
 }
 
 void tab2Dlg::SpecilGrabDecision(int pictureSelcet, CvPoint3D32f * pushPoint, float * degree)
@@ -955,24 +956,171 @@ CvPoint3D32f tab2Dlg::extendPoint(CvPoint3D32f first, CvPoint3D32f second, int v
 	return extendPoint;
 }
 
+
+//夾取整合
 void tab2Dlg::OnBnClickedButtonstartgrab()
 {
 		CMFC_SystemDlg mainDlg;
-		//mainDlg.packetCreat_toPoint(550, 0, 50, 90);
+		switch (mainDlg.workSpace1Color)
+		{
+		case 0://如果分類區沒東西
+		{
+			//1.pushPoint[0] 的 x y
+			mainDlg.packetCreat_toPoint(m_pushPoint[0].x, m_pushPoint[0].y, 100, m_degree);
+			//2.pushPoint[0] 的 z
+			mainDlg.packetCreat_toPoint(m_pushPoint[0].x, m_pushPoint[0].y, m_pushPoint[0].z, m_degree);
+			//3.pushPoint[1]
+			mainDlg.packetCreat_toPoint(m_pushPoint[1].x, m_pushPoint[1].y, m_pushPoint[1].z, m_degree);
 
-		//@傳輸TO SCARA
-		//1.pushPoint[0] 的 x y
-		mainDlg.packetCreat_toPoint(m_pushPoint[0].x, m_pushPoint[0].y, 100, m_degree);
-		//2.pushPoint[0] 的 z
-		mainDlg.packetCreat_toPoint(m_pushPoint[0].x, m_pushPoint[0].y, m_pushPoint[0].z, m_degree);
-		//3.pushPoint[1]
-		mainDlg.packetCreat_toPoint(m_pushPoint[1].x, m_pushPoint[1].y, m_pushPoint[1].z, m_degree);
-		//4. 夾
-		mainDlg.grab();
-		//5.Z起來
-		mainDlg.packetCreat_toPoint(m_pushPoint[1].x, m_pushPoint[1].y, 100, m_degree);
-		//6.to home or 辨識後的位置
-		mainDlg.packetCreat_toPoint(550, 0, 133, 0);
+			if (priority < 6)//表示不是用推的 有東西要夾
+			{
+				Sleep(6000);
+				mainDlg.grab();
+				Sleep(500);
+			}
+			//5. Z起來
+			mainDlg.packetCreat_toPoint(m_pushPoint[1].x, m_pushPoint[1].y, 100, m_degree);
+			
+			if (priority < 6)//表示不是用推的 有東西要放在分類區
+			{
+				//6. to 分類區
+				mainDlg.packetCreat_toPoint(400, -180, 100, -90);
+				//7. down
+				mainDlg.packetCreat_toPoint(400, -180, 3, -90);
+
+				//放
+				Sleep(4500);
+				mainDlg.grab();
+				Sleep(500);
+
+				// up
+				mainDlg.packetCreat_toPoint(400, -180, 50, -90);
+			}
+
+			//8. to home
+			mainDlg.packetCreat_toPoint(550, 0, 133, 0);
+		}
+		break;
+		case 1: //分類區 red
+		{
+			//to 分類區
+			mainDlg.packetCreat_toPoint(400, -180, 100, -90);
+			//down
+			mainDlg.packetCreat_toPoint(400, -180, 3, -90);
+			//grab
+			Sleep(3500);
+			mainDlg.grab();
+			Sleep(500);
+			// up
+			mainDlg.packetCreat_toPoint(400, -180, 50, -90);
+			
+			//to red
+			mainDlg.packetCreat_toPoint(441, 165, 50, 0);
+			//to red Down
+			mainDlg.packetCreat_toPoint(441, 165, 18, 0);
+
+			//放
+			Sleep(3000);
+			mainDlg.grab();
+			Sleep(500);
+			
+			//up
+			mainDlg.packetCreat_toPoint(441, 165, 136, 0);
+			
+			//回家
+			mainDlg.packetCreat_toPoint(550,0, 136,0);
+		}
+		break;
+		case 2: //分類區 green
+		{
+			//to 分類區
+			mainDlg.packetCreat_toPoint(400, -180, 100, -90);
+			Sleep(500);
+			//down
+			mainDlg.packetCreat_toPoint(400, -180, 3, -90);
+		
+			//grab
+			Sleep(3500);
+			mainDlg.grab();
+			Sleep(500);
+			// up
+			mainDlg.packetCreat_toPoint(400, -180, 50, -90);
+		
+			//to green
+			mainDlg.packetCreat_toPoint(366, 165, 50, 0);
+			//to green Down
+			mainDlg.packetCreat_toPoint(366, 165, 18, 0);
+
+			//放掉
+			Sleep(3000);
+			mainDlg.grab();
+			Sleep(500);
+			//up
+			mainDlg.packetCreat_toPoint(336, 165, 136, 0);
+			
+			//回家
+			mainDlg.packetCreat_toPoint(550, 0, 136, 0);
+		}
+		break;
+		case 3: //分類區 blue
+		{
+			//to 分類區
+			mainDlg.packetCreat_toPoint(400, -180, 100, -90);
+		
+			//down
+			mainDlg.packetCreat_toPoint(400, -180, 3, -90);
+			//grab
+			Sleep(3500);
+			mainDlg.grab();
+			Sleep(500);
+			// up
+			mainDlg.packetCreat_toPoint(400, -180, 50, -90);
+			//to blue
+			mainDlg.packetCreat_toPoint(291, 165, 50, 0);
+			//to blue Down
+			mainDlg.packetCreat_toPoint(291, 165, 18, 0);
+
+			//放掉
+			Sleep(3000);
+			mainDlg.grab();
+			Sleep(500);
+			//up
+			mainDlg.packetCreat_toPoint(291, 165, 136, -90);
+			
+			//回家
+			mainDlg.packetCreat_toPoint(550, 0, 136, 0);
+			
+			
+		}
+		break;
+		case 4: //分類區 brown
+		{
+			//to 分類區
+			mainDlg.packetCreat_toPoint(400, -180, 100, -90);
+			
+			//down
+			mainDlg.packetCreat_toPoint(400, -180, 3, -90);
+			//grab
+			Sleep(3500);
+			mainDlg.grab();
+			Sleep(500);
+			// up
+			mainDlg.packetCreat_toPoint(400, -180, 50, -90);
+			
+			//to trash
+			mainDlg.packetCreat_toPoint(290, 260, 50, -90);
+		
+			//放掉
+			Sleep(5000);
+			mainDlg.grab();
+			Sleep(500);
+			//回家
+			mainDlg.packetCreat_toPoint(550, 0, 136, 0);
+		}
+		break;
+		}
+
+
 
 }
 
@@ -1021,8 +1169,6 @@ void tab2Dlg::OnBnClickedButtonautobinpick()
 
 	//5. (case4 的處理)
 }
-
-
 
 
 //找最大優先權 並 顯示

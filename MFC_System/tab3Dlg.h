@@ -1,4 +1,5 @@
 #pragma once
+#include "zbar.h"  
 
 struct CTab3threadParam
 {
@@ -35,8 +36,8 @@ public:
 
 
 	//thread
-	CTab2threadParam m_threadPara;
+	CTab3threadParam m_threadPara;
 	CWinThread*  m_lpThread;
 	static UINT MythreadFun(LPVOID LParam);
-	void Thread_Image_CannyRoi(LPVOID lParam);
+ 
 };

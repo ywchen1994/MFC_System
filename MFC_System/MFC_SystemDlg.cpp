@@ -19,6 +19,7 @@ Kinect2Capture CMFC_SystemDlg::kinect;
 IplImage*CMFC_SystemDlg::img_DepthS=nullptr;
 float CMFC_SystemDlg::DepthPointsBase[512][424]= { 0 };
 IplImage*CMFC_SystemDlg::img_RgbS = nullptr;
+IplImage*CMFC_SystemDlg::img_RgbSetS= cvCreateImage(cvSize(1920, 1080), IPL_DEPTH_8U,3);
 IplImage*CMFC_SystemDlg::img_CannyS = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
 IplImage*CMFC_SystemDlg::sImg_CannyRoiS = cvCreateImage(cvSize(512, 424), IPL_DEPTH_8U, 1);
 float CMFC_SystemDlg::CamRefX = 0;
@@ -30,8 +31,9 @@ float CMFC_SystemDlg::s_Ypos = 0;
 float CMFC_SystemDlg::s_Zpos = 0;
 float CMFC_SystemDlg::s_Tdeg = 0;
  int const CMFC_SystemDlg::objectdata[3] = {85,56,19};
-
+ CvPoint CMFC_SystemDlg::RGBRefPoint = {0};
  CString CMFC_SystemDlg::ip_SCARA = _T("192.168.1.3");
+ int CMFC_SystemDlg::workSpace1Color = 0;
 
 CMFC_SystemDlg::CMFC_SystemDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_MFC_SYSTEM_DIALOG, pParent)
@@ -66,6 +68,9 @@ BEGIN_MESSAGE_MAP(CMFC_SystemDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_Ref, &CMFC_SystemDlg::OnBnClickedButtonRef)
 	ON_BN_CLICKED(IDC_BUTTON_grab, &CMFC_SystemDlg::OnBnClickedButtongrab)
 	ON_BN_CLICKED(IDC_BUTTON_DownRef, &CMFC_SystemDlg::OnBnClickedButtonDownref)
+	ON_BN_CLICKED(IDC_BUTTON3, &CMFC_SystemDlg::OnBnClickedButton3)
+	ON_WM_MBUTTONDOWN()
+	ON_BN_CLICKED(IDC_BUTTON_RGB_Start, &CMFC_SystemDlg::OnBnClickedButtonRgbStart)
 END_MESSAGE_MAP()
 
 
@@ -196,7 +201,7 @@ UINT CMFC_SystemDlg::MythreadFun(LPVOID LParam)
 	case 1:
 		lpview->Thread_Image_Depth(LParam);
 	case 2:
-		
+		lpview->Thread_Image_RGBDetection(LParam);
 	default:
 		break;
 	}
@@ -220,10 +225,11 @@ void CMFC_SystemDlg::Thread_Image_RGB(LPVOID lParam)
 		img_RgbS = kinect.RGBAImage();
 		if (img_RgbS != NULL) {
 			hWnd->ShowImage(img_RgbS, hWnd->GetDlgItem(IDC_IMAGE_RGBLive), 4);	
+			cvCvtColor(img_RgbS, img_RgbSetS, CV_RGBA2RGB);
 			cvReleaseImage(&img_RgbS);
 		}
 	}
-
+	
 }
 
 void CMFC_SystemDlg::Thread_Image_Depth(LPVOID lParam)
@@ -255,9 +261,14 @@ void CMFC_SystemDlg::OnRButtonDown(UINT nFlags, CPoint point)
 			for (int i = 0; i < 512; i++)
 				for (int j = 0; j < 424; j++)
 					DepthPointsBase[i][j] = kinect.pDepthPoints[i + 512 * j];//³æ¦ì¬Omm
+			MessageBox(_T("Set Depth Done"));
+		}
+		if (point.x >10 && point.x < (10 + 320 ) && point.y > 10 && point.y < (10 + 240))
+		{
+			Thread_OpenSetRGB();
 		}
 	}
-	MessageBox(_T("Set Depth Done"));
+
 	CDialogEx::OnRButtonDown(nFlags, point);
 }
 
@@ -319,7 +330,7 @@ void CMFC_SystemDlg::packetCreat_toPoint(float x, float y, float z, float t)
 		MessageBox(L"Create Faild");
 	}
 
-	if (client_socket.Connect(ip_SCARA, 8888))
+	if (client_socket.Connect(ip_SCARA, 888))
 	{
 		client_socket.Send(resp, sizeof(resp));
 		client_socket.Close();
@@ -368,7 +379,7 @@ void CMFC_SystemDlg::grab()
 			MessageBox(L"Create Faild");
 		return;
 	}
-	else if (client_socket.Connect(ip_SCARA, 8888))
+	else if (client_socket.Connect(ip_SCARA, 888))
 	{
 		client_socket.Send(resp, sizeof(resp));
 	}
@@ -383,11 +394,75 @@ void CMFC_SystemDlg::OnBnClickedButtongrab()
 
 void CMFC_SystemDlg::OnBnClickedButtonDownref()
 {
-	
 	float tarX = 280;
 	float tarY = -410;
 	float tarZ = 43;
 	float tarTheta = 0;
 	packetCreat_toPoint(tarX, tarY, tarZ, tarTheta);
 
+}
+void CMFC_SystemDlg::Thread_OpenSetRGB()
+{
+	CSet  pSetRGBDlg(this);
+	pSetRGBDlg.DoModal();
+}
+
+void CMFC_SystemDlg::OnBnClickedButton3()
+{
+
+}
+
+
+void CMFC_SystemDlg::OnMButtonDown(UINT nFlags, CPoint point)
+{
+	
+
+	CDialogEx::OnMButtonDown(nFlags, point);
+}
+void CMFC_SystemDlg::Thread_Image_RGBDetection(LPVOID lParam)
+{
+	CMythreadParam * Thread_Info = (CMythreadParam *) lParam;
+	CMFC_SystemDlg * hWnd = (CMFC_SystemDlg *)CWnd::FromHandle((HWND)Thread_Info->hWnd);
+	CvScalar RGBColor;
+	IplImage* img_Rgb_hsv = nullptr;
+	while (1)
+	{
+		img_Rgb_hsv = cvCreateImage(cvSize(1920, 1080), IPL_DEPTH_8U, 3);
+		cvCvtColor(img_RgbSetS, img_Rgb_hsv, CV_BGR2HSV);
+		RGBColor=cvGet2D(img_Rgb_hsv, RGBRefPoint.y, RGBRefPoint.x);
+
+		if (RGBColor.val[0] > 150 && RGBColor.val[0] < 180 && RGBColor.val[2] >100)//red
+		{
+			workSpace1Color = 1;
+			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Red"));
+		}
+		else if (RGBColor.val[0] > 80 && RGBColor.val[0] < 100 && RGBColor.val[2] >100)//green
+		{
+			workSpace1Color = 2;
+			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Green"));
+		}
+		else if (RGBColor.val[0] > 100 && RGBColor.val[0] < 120 && RGBColor.val[2] >100)//blue
+		{
+			workSpace1Color = 3;
+			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Blue"));
+		}
+		else if (RGBColor.val[0] > 0 && RGBColor.val[0] < 20 && RGBColor.val[2] >100)//brown
+		{
+			workSpace1Color = 4;
+			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("Brown"));
+		}
+		else
+		{
+			workSpace1Color = 0;
+			hWnd->GetDlgItem(IDC_EDIT_detectShow)->SetWindowText(_T("None"));
+		}
+		cvReleaseImage(&img_Rgb_hsv);
+	}
+}
+
+void CMFC_SystemDlg::OnBnClickedButtonRgbStart()
+{
+	m_threadPara.m_case = 2;
+	m_threadPara.hWnd = m_hWnd;
+	m_lpThread = AfxBeginThread(&CMFC_SystemDlg::MythreadFun, (LPVOID)&m_threadPara);
 }
