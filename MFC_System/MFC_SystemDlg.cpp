@@ -107,7 +107,7 @@ BOOL CMFC_SystemDlg::OnInitDialog()
 	
 	m_Img_RGBLive.SetWindowPos(NULL, 10, 10, 320, 240, SWP_SHOWWINDOW);
 	m_Img_DepthLive.SetWindowPos(NULL, 10 + 320, 10, 320, 240, SWP_SHOWWINDOW);
-	m_SCARAIP.SetWindowText(_T("192.168.1.3"));
+	m_SCARAIP.SetWindowText(_T("192.168.0.101"));
 
 	m_threadPara.m_case = 2;
 	m_threadPara.hWnd = m_hWnd;

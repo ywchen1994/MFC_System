@@ -1,5 +1,8 @@
 #pragma once
 #include "zbar.h"  
+#include "cv.h" 
+#include "highgui.h"  
+#include "afxwin.h"
 
 struct CTab3threadParam
 {
@@ -31,7 +34,9 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedButtonrobotfrount();
-	afx_msg void OnBnClickedButtonconnect();
+	afx_msg
+		void ShowImage(IplImage * Image, CWnd * pWnd, int channels, CvSize size);
+	void OnBnClickedButtonconnect();
 	afx_msg void OnBnClickedButtonBack();
 
 
@@ -39,5 +44,14 @@ public:
 	CTab3threadParam m_threadPara;
 	CWinThread*  m_lpThread;
 	static UINT MythreadFun(LPVOID LParam);
- 
+	void Thread_Image_RGB(LPVOID lParam);
+	void Thread_goRobot(LPVOID lParam);
+	static bool FLAG_open;
+	static int Xpos;
+	static int Ypos;
+
+	CListBox m_listBox_msg;
+	afx_msg void OnBnClickedButtonstart();
+	afx_msg void OnBnClickedButtonstop();
+	afx_msg void OnBnClickedButtongorobot();
 };
