@@ -250,6 +250,7 @@ void tab3Dlg::OnBnClickedButtonstart()
 
 void tab3Dlg::OnBnClickedButtonstop()
 {
+	robot.stop();
 	FLAG_open = false;
 }
 

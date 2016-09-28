@@ -334,7 +334,7 @@ void CMFC_SystemDlg::packetCreat_toPoint(float x, float y, float z, float t)
 	CSocket client_socket;
 
 	char resp[32];
-	if (sqrt(pow(x,2)+ pow(y, 2))>550)
+	if (sqrt(pow(x,2)+ pow(y, 2))>=551)
 	{
 		MessageBox(_T("Length error"));
 		return;
@@ -403,7 +403,7 @@ void CMFC_SystemDlg::OnBnClickedButtonHome()
 
 
 	float tarX = 550;
-	float tarY =1000;
+	float tarY =0;
 	float tarZ =133;
 	float tarTheta = 0;
 
