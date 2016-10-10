@@ -1,6 +1,5 @@
 
 // MFC_SystemDlg.cpp : πÍß@¿…
-//
 
 #include "stdafx.h"
 #include "MFC_System.h"
